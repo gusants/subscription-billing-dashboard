@@ -6,11 +6,16 @@ import { Button } from '../../components/ui/button'
 import { ChargeItem } from './charge-item'
 import { ChargesTable } from './charges-table'
 import { customerChargesQuery } from './charges-queries'
+import { useOptimisticRetry } from './use-optimistic-retry'
 
 const PLACEHOLDER_CHARGES = 4
+const NO_CHARGES: never[] = []
 
 export function ChargesTimeline({ customerId }: { customerId: string }) {
   const query = useInfiniteQuery(customerChargesQuery(customerId))
+  const loadedCharges =
+    query.data?.pages.flatMap((page) => page.data) ?? NO_CHARGES
+  const { charges, retryCharge } = useOptimisticRetry(customerId, loadedCharges)
 
   if (query.isPending) {
     return (
@@ -36,7 +41,6 @@ export function ChargesTimeline({ customerId }: { customerId: string }) {
     )
   }
 
-  const charges = query.data.pages.flatMap((page) => page.data)
   const total = query.data.pages[0]?.meta.total ?? 0
 
   if (charges.length === 0) {
@@ -50,15 +54,15 @@ export function ChargesTimeline({ customerId }: { customerId: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border lg:block">
-        <ChargesTable charges={charges} />
+      <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border xl:block">
+        <ChargesTable charges={charges} onRetry={retryCharge} />
       </div>
       <ol
         aria-label="Charges list"
-        className="divide-border border-border bg-surface divide-y rounded-lg border lg:hidden"
+        className="divide-border border-border bg-surface divide-y rounded-lg border xl:hidden"
       >
         {charges.map((charge) => (
-          <ChargeItem key={charge.id} charge={charge} />
+          <ChargeItem key={charge.id} charge={charge} onRetry={retryCharge} />
         ))}
       </ol>
       <div className="text-fg-muted flex items-center justify-between gap-4">

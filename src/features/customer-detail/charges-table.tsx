@@ -1,6 +1,5 @@
 import { CircleCheck, CircleX } from 'lucide-react'
 import { Fragment } from 'react'
-import type { Charge } from '../../api/contract'
 import { StatusBadge } from '../../components/ui/status-badge'
 import {
   chargeStatusLabel,
@@ -14,53 +13,83 @@ import {
   hasDeclines,
   latestDeclineReason,
 } from './charge-outcome'
+import { PendingAttemptLabel } from './pending-attempt'
+import { RetryButton } from './retry-button'
+import { canRetry, type ChargeView } from './use-optimistic-retry'
 
 const headerClass = 'px-4 py-2.5 text-left text-xs font-medium text-fg-muted'
 const cellClass = 'border-t border-border px-4 py-2.5'
+const RETRYING_STATUS = { label: 'Retrying', tone: 'warning' } as const
 
-function ReasonCell({ charge }: { charge: Charge }) {
+type ChargesTableProps = {
+  charges: ChargeView[]
+  onRetry: (chargeId: string) => void
+}
+
+function ReasonCell({
+  charge,
+  onRetry,
+}: {
+  charge: ChargeView
+  onRetry: (chargeId: string) => void
+}) {
   const reason = latestDeclineReason(charge)
   const outcome = chargeOutcome(charge)
   if (!reason && !outcome) return <span className="text-fg-subtle">—</span>
   return (
-    <span className="flex flex-col">
-      {reason && <span className="text-danger font-medium">{reason}</span>}
-      {outcome && <span className="text-fg-muted">{outcome}</span>}
-    </span>
+    <div className="flex items-center justify-between gap-3">
+      <span className="flex flex-col">
+        {reason && <span className="text-danger font-medium">{reason}</span>}
+        {outcome && <span className="text-fg-muted">{outcome}</span>}
+      </span>
+      {canRetry(charge) && <RetryButton charge={charge} onRetry={onRetry} />}
+    </div>
   )
 }
 
-function AttemptRows({ charge }: { charge: Charge }) {
-  return charge.attempts.map((attempt, index) => {
-    const isDeclined = attempt.result === 'declined'
-    const Icon = isDeclined ? CircleX : CircleCheck
-    return (
-      <tr key={attempt.id} className="text-fg-muted">
-        <td className="py-1.5 pr-4 pl-8 whitespace-nowrap tabular-nums">
-          {formatDateTime(attempt.createdAt)}
-        </td>
-        <td className="px-4 py-1.5" colSpan={2}>
-          <span className="inline-flex items-center gap-1.5">
-            <Icon
-              aria-hidden
-              size={14}
-              strokeWidth={2}
-              className={isDeclined ? 'text-danger' : 'text-success'}
-            />
-            Attempt {index + 1}
-          </span>
-        </td>
-        <td className="px-4 py-1.5" colSpan={2}>
-          {isDeclined
-            ? declineReasonLabel(attempt.failureReason ?? '')
-            : 'Approved'}
-        </td>
-      </tr>
-    )
-  })
+function AttemptRows({ charge }: { charge: ChargeView }) {
+  return (
+    <>
+      {charge.attempts.map((attempt, index) => {
+        const isDeclined = attempt.result === 'declined'
+        const Icon = isDeclined ? CircleX : CircleCheck
+        return (
+          <tr key={attempt.id} className="text-fg-muted">
+            <td className="py-1.5 pr-4 pl-8 whitespace-nowrap tabular-nums">
+              {formatDateTime(attempt.createdAt)}
+            </td>
+            <td className="px-4 py-1.5" colSpan={2}>
+              <span className="inline-flex items-center gap-1.5">
+                <Icon
+                  aria-hidden
+                  size={14}
+                  strokeWidth={2}
+                  className={isDeclined ? 'text-danger' : 'text-success'}
+                />
+                Attempt {index + 1}
+              </span>
+            </td>
+            <td className="px-4 py-1.5" colSpan={2}>
+              {isDeclined
+                ? declineReasonLabel(attempt.failureReason ?? '')
+                : 'Approved'}
+            </td>
+          </tr>
+        )
+      })}
+      {charge.isRetrying && (
+        <tr>
+          <td className="text-fg-muted py-1.5 pr-4 pl-8">Now</td>
+          <td className="px-4 py-1.5" colSpan={4}>
+            <PendingAttemptLabel attemptNumber={charge.attemptCount + 1} />
+          </td>
+        </tr>
+      )}
+    </>
+  )
 }
 
-export function ChargesTable({ charges }: { charges: Charge[] }) {
+export function ChargesTable({ charges, onRetry }: ChargesTableProps) {
   return (
     <table
       aria-label="Charges"
@@ -101,10 +130,14 @@ export function ChargesTable({ charges }: { charges: Charge[] }) {
               </td>
               <td className={cellClass}>{paymentMethodLabel(charge.method)}</td>
               <td className={cellClass}>
-                <StatusBadge {...chargeStatusLabel(charge.status)} />
+                <StatusBadge
+                  {...(charge.isRetrying
+                    ? RETRYING_STATUS
+                    : chargeStatusLabel(charge.status))}
+                />
               </td>
               <td className={cellClass}>
-                <ReasonCell charge={charge} />
+                <ReasonCell charge={charge} onRetry={onRetry} />
               </td>
               <td
                 className={`${cellClass} text-right font-semibold whitespace-nowrap tabular-nums`}
@@ -112,7 +145,9 @@ export function ChargesTable({ charges }: { charges: Charge[] }) {
                 {formatCurrency(charge.amountCents)}
               </td>
             </tr>
-            {hasDeclines(charge) && <AttemptRows charge={charge} />}
+            {(hasDeclines(charge) || charge.isRetrying) && (
+              <AttemptRows charge={charge} />
+            )}
           </Fragment>
         ))}
       </tbody>
