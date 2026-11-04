@@ -35,6 +35,11 @@ export function CustomersToolbar({
   onStatusChange,
 }: CustomersToolbarProps) {
   const [draft, setDraft] = useState(search ?? '')
+  const [syncedSearch, setSyncedSearch] = useState(search)
+  if (search !== syncedSearch) {
+    setSyncedSearch(search)
+    if ((draft.trim() || undefined) !== search) setDraft(search ?? '')
+  }
   const commitSearch = useDebouncedCallback(
     (value: string) => onSearchChange(value.trim() || undefined),
     SEARCH_DEBOUNCE_MS,
