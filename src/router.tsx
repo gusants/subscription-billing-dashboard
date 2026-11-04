@@ -1,5 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { createRouter, type RouterHistory } from '@tanstack/react-router'
+import { PageSkeleton } from './components/feedback/page-skeleton'
+import { RouteError } from './components/feedback/route-error'
 import { routeTree } from './routeTree.gen'
 
 export function createAppRouter(
@@ -13,6 +15,8 @@ export function createAppRouter(
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
+    defaultPendingComponent: PageSkeleton,
+    defaultErrorComponent: RouteError,
   })
 }
 
