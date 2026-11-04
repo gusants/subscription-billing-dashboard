@@ -3,14 +3,17 @@ import { StatusBadge } from '../../components/ui/status-badge'
 import { subscriptionStatusLabel } from '../../lib/billing-labels'
 import { formatDate } from '../../lib/format-date'
 import { formatPlanPrice } from '../../lib/format-plan-price'
+import { CancelSubscriptionDialog } from './cancel-subscription-dialog'
 
 type SubscriptionsPanelProps = {
+  customerId: string
   subscriptions: CustomerDetail['subscriptions']
   plans: Map<string, Plan> | undefined
   primaryId: string | undefined
 }
 
 export function SubscriptionsPanel({
+  customerId,
   subscriptions,
   plans,
   primaryId,
@@ -51,7 +54,18 @@ export function SubscriptionsPanel({
                   {formatDate(subscription.currentPeriodEnd)}
                 </span>
               </div>
-              <StatusBadge {...subscriptionStatusLabel(subscription.status)} />
+              <div className="flex flex-col items-end gap-3">
+                <StatusBadge
+                  {...subscriptionStatusLabel(subscription.status)}
+                />
+                {subscription.status !== 'canceled' && (
+                  <CancelSubscriptionDialog
+                    customerId={customerId}
+                    subscriptionId={subscription.id}
+                    planName={plan?.name ?? 'this'}
+                  />
+                )}
+              </div>
             </li>
           )
         })}

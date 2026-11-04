@@ -77,6 +77,7 @@ export function CustomerDetailPage() {
           <AiSummaryPlaceholder />
           {customer.subscriptions.length > 0 && (
             <SubscriptionsPanel
+              customerId={customer.id}
               subscriptions={customer.subscriptions}
               plans={plans}
               primaryId={primary?.id}
