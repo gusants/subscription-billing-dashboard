@@ -4,3 +4,4 @@ _local
 src/api/generated
 src/routeTree.gen.ts
 public/mockServiceWorker.js
+src/mocks/seed.json
