@@ -9,6 +9,7 @@ import { formatPlanPrice } from '../../lib/format-plan-price'
 import { nextRetryDate } from '../../lib/retry-schedule'
 import { customerChargesQuery } from './charges-queries'
 import { customerPaidTotalQuery } from './customer-detail-queries'
+import { NOT_LOADED } from '../../lib/use-flash-on-change'
 import { StatCard } from './stat-card'
 
 type SubscriptionOverviewProps = {
@@ -39,13 +40,23 @@ export function SubscriptionOverview({
   return (
     <section aria-label="Subscription overview">
       <dl className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
-        <StatCard label="Status">
+        <StatCard label="Status" signature={subscription.status}>
           <StatusBadge {...subscriptionStatusLabel(subscription.status)} />
         </StatCard>
-        <StatCard label={plan ? `Amount · ${plan.name}` : 'Amount'}>
+        <StatCard
+          label={plan ? `Amount · ${plan.name}` : 'Amount'}
+          signature={plan ? formatPlanPrice(plan) : NOT_LOADED}
+        >
           {plan ? formatPlanPrice(plan) : <Skeleton className="h-5 w-28" />}
         </StatCard>
-        <StatCard label="Next retry">
+        <StatCard
+          label="Next retry"
+          signature={
+            nextRetry.isPending
+              ? NOT_LOADED
+              : String(nextRetry.retryAt ?? 'none')
+          }
+        >
           {nextRetry.isPending ? (
             <Skeleton className="h-5 w-24" />
           ) : nextRetry.retryAt ? (
@@ -54,7 +65,12 @@ export function SubscriptionOverview({
             <span className="text-fg-subtle font-normal">None scheduled</span>
           )}
         </StatCard>
-        <StatCard label="Lifetime paid">
+        <StatCard
+          label="Lifetime paid"
+          signature={
+            paidTotal.data === undefined ? NOT_LOADED : String(paidTotal.data)
+          }
+        >
           {paidTotal.data !== undefined ? (
             formatCurrency(paidTotal.data)
           ) : paidTotal.isError ? (

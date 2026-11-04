@@ -10,11 +10,18 @@ import {
   latestDeclineReason,
 } from './charge-outcome'
 import { PendingAttemptLabel } from './pending-attempt'
+import { useFlashOnChange } from '../../lib/use-flash-on-change'
+import { chargeSignature } from './charge-signature'
 import { RetryButton } from './retry-button'
 import { canRetry, type ChargeView } from './use-optimistic-retry'
 
 const headerClass = 'px-4 py-2.5 text-left text-xs font-medium text-fg-muted'
 const cellClass = 'border-t border-border px-4 py-2.5'
+type ChargeRowProps = {
+  charge: ChargeView
+  onRetry: (chargeId: string) => void
+}
+
 const RETRYING_STATUS = { label: 'Retrying', tone: 'warning' } as const
 
 type ChargesTableProps = {
@@ -58,6 +65,39 @@ function AttemptsRow({ charge }: { charge: ChargeView }) {
   )
 }
 
+function ChargeRow({ charge, onRetry }: ChargeRowProps) {
+  const flash = useFlashOnChange(chargeSignature(charge))
+
+  return (
+    <tr data-flash={flash} className="hover:bg-surface-muted/40">
+      <td
+        className={`${cellClass} whitespace-nowrap tabular-nums`}
+        title={
+          charge.paidAt ? `Paid ${formatDateTime(charge.paidAt)}` : undefined
+        }
+      >
+        {formatDate(charge.dueDate)}
+      </td>
+      <td className={cellClass}>{paymentMethodLabel(charge.method)}</td>
+      <td className={cellClass}>
+        <StatusBadge
+          {...(charge.isRetrying
+            ? RETRYING_STATUS
+            : chargeStatusLabel(charge.status))}
+        />
+      </td>
+      <td className={cellClass}>
+        <ReasonCell charge={charge} onRetry={onRetry} />
+      </td>
+      <td
+        className={`${cellClass} text-right font-semibold whitespace-nowrap tabular-nums`}
+      >
+        {formatCurrency(charge.amountCents)}
+      </td>
+    </tr>
+  )
+}
+
 export function ChargesTable({ charges, onRetry }: ChargesTableProps) {
   return (
     <table
@@ -86,34 +126,7 @@ export function ChargesTable({ charges, onRetry }: ChargesTableProps) {
       <tbody>
         {charges.map((charge) => (
           <Fragment key={charge.id}>
-            <tr className="hover:bg-surface-muted/40">
-              <td
-                className={`${cellClass} whitespace-nowrap tabular-nums`}
-                title={
-                  charge.paidAt
-                    ? `Paid ${formatDateTime(charge.paidAt)}`
-                    : undefined
-                }
-              >
-                {formatDate(charge.dueDate)}
-              </td>
-              <td className={cellClass}>{paymentMethodLabel(charge.method)}</td>
-              <td className={cellClass}>
-                <StatusBadge
-                  {...(charge.isRetrying
-                    ? RETRYING_STATUS
-                    : chargeStatusLabel(charge.status))}
-                />
-              </td>
-              <td className={cellClass}>
-                <ReasonCell charge={charge} onRetry={onRetry} />
-              </td>
-              <td
-                className={`${cellClass} text-right font-semibold whitespace-nowrap tabular-nums`}
-              >
-                {formatCurrency(charge.amountCents)}
-              </td>
-            </tr>
+            <ChargeRow charge={charge} onRetry={onRetry} />
             {(hasDeclines(charge) || charge.isRetrying) && (
               <AttemptsRow charge={charge} />
             )}

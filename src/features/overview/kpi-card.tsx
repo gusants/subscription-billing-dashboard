@@ -1,5 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useFlashOnChange } from '../../lib/use-flash-on-change'
 
 export type KpiDelta = {
   text: string
@@ -32,9 +33,13 @@ export function KpiCard({
   action,
 }: KpiCardProps) {
   const DeltaIcon = delta ? directionIcon[delta.direction] : null
+  const flash = useFlashOnChange(value)
 
   return (
-    <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border px-4 py-4">
+    <div
+      data-flash={flash}
+      className="border-border bg-surface flex flex-col gap-2 rounded-lg border px-4 py-4"
+    >
       <dt className="text-fg-muted">{label}</dt>
       <dd className="flex flex-col gap-1.5">
         <span className="text-2xl font-semibold tracking-tight tabular-nums">

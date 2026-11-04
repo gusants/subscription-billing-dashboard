@@ -5,6 +5,8 @@ import { formatDate } from '../../lib/format-date'
 import { ChargeAttempts } from './charge-attempts'
 import { chargeOutcome, hasDeclines } from './charge-outcome'
 import { PendingAttemptLabel } from './pending-attempt'
+import { useFlashOnChange } from '../../lib/use-flash-on-change'
+import { chargeSignature } from './charge-signature'
 import { RetryButton } from './retry-button'
 import { canRetry, type ChargeView } from './use-optimistic-retry'
 
@@ -17,9 +19,10 @@ type ChargeItemProps = {
 
 export function ChargeItem({ charge, onRetry }: ChargeItemProps) {
   const outcome = chargeOutcome(charge)
+  const flash = useFlashOnChange(chargeSignature(charge))
 
   return (
-    <li className="flex flex-col gap-2 px-4 py-3">
+    <li data-flash={flash} className="flex flex-col gap-2 px-4 py-3">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <StatusBadge

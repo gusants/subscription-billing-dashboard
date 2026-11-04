@@ -103,3 +103,23 @@
     }
   }
 }
+
+@keyframes flash-a {
+  from {
+    background-color: var(--accent-soft);
+  }
+}
+
+@keyframes flash-b {
+  from {
+    background-color: var(--accent-soft);
+  }
+}
+
+[data-flash='a'] {
+  animation: flash-a 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-flash='b'] {
+  animation: flash-b 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
