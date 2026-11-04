@@ -11,6 +11,7 @@ import { CUSTOMERS_PAGE_SIZE, toCustomerListParams } from './customers-search'
 import { CustomersStackedList } from './customers-stacked-list'
 import { CustomersTable } from './customers-table'
 import { CustomersToolbar } from './customers-toolbar'
+import { NewCustomerDialog } from './new-customer-dialog'
 
 const route = getRouteApi('/customers/')
 
@@ -26,11 +27,14 @@ export function CustomersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight">Customers</h1>
-        <p className="text-fg-muted">
-          Find a customer to see their subscription and payment history.
-        </p>
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold tracking-tight">Customers</h1>
+          <p className="text-fg-muted">
+            Find a customer to see their subscription and payment history.
+          </p>
+        </div>
+        <NewCustomerDialog />
       </header>
 
       <CustomersToolbar
