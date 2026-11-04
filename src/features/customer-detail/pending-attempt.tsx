@@ -11,7 +11,7 @@ export function PendingAttemptLabel({
         aria-hidden
         size={14}
         strokeWidth={2}
-        className="text-accent motion-safe:animate-spin"
+        className="text-fg-subtle motion-safe:animate-spin"
       />
       Attempt {attemptNumber}: charging the card…
     </span>

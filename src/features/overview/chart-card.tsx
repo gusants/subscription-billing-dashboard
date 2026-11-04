@@ -28,7 +28,7 @@ export function ChartCard({
         <h2 id={headingId} className="font-semibold">
           {title}
         </h2>
-        <p className="text-fg-muted">{description}</p>
+        <p className="text-fg-muted text-pretty">{description}</p>
       </header>
       <p className="sr-only">{summary}</p>
       <div aria-hidden>{children}</div>

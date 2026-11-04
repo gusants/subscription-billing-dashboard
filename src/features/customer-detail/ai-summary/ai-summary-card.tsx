@@ -144,7 +144,7 @@ export function AiSummaryCard({ customerId }: { customerId: string }) {
           aria-hidden
           size={16}
           strokeWidth={1.75}
-          className="text-accent"
+          className="text-fg-subtle"
         />
         AI summary
       </h2>
