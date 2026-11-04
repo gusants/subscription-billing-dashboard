@@ -21,6 +21,11 @@ import {
   toPublicCharge,
   toPublicSubscription,
 } from './db/queries'
+import {
+  clearIdempotencyKeys,
+  REPLAYED_HEADER,
+  withIdempotency,
+} from './idempotency'
 import { param, route, searchParams } from './route'
 import {
   chargeHistoryQuery,
@@ -107,21 +112,34 @@ export const handlers = [
   http.post(
     url('/subscriptions'),
     route(async ({ request }) => {
-      const input = createSubscriptionBody.parse(await request.json())
-      const body = store().transact((db) => {
-        const { subscription, charge } = createSubscription(db, input)
-        const failureReason = charge.attempts.at(-1)?.failureReason ?? undefined
-        return {
-          ...toPublicSubscription(subscription),
-          latestCharge: {
-            id: charge.id,
-            amountCents: charge.amountCents,
-            status: charge.status,
-            failureReason,
-          },
-        }
-      })
-      return { status: CREATED, body }
+      const rawBody = await request.text()
+      const input = createSubscriptionBody.parse(JSON.parse(rawBody))
+      const result = await withIdempotency(
+        request.headers.get('Idempotency-Key'),
+        rawBody,
+        () => ({
+          status: CREATED,
+          body: store().transact((db) => {
+            const { subscription, charge } = createSubscription(db, input)
+            const failureReason =
+              charge.attempts.at(-1)?.failureReason ?? undefined
+            return {
+              ...toPublicSubscription(subscription),
+              latestCharge: {
+                id: charge.id,
+                amountCents: charge.amountCents,
+                status: charge.status,
+                failureReason,
+              },
+            }
+          }),
+        }),
+      )
+      return {
+        status: result.status,
+        body: result.body,
+        headers: result.replayed ? { [REPLAYED_HEADER]: 'true' } : undefined,
+      }
     }),
   ),
   http.get(
@@ -190,6 +208,7 @@ export const handlers = [
     url('/fake-gateway/reset'),
     route(() => {
       store().reset()
+      clearIdempotencyKeys()
       return { status: NO_CONTENT }
     }),
   ),

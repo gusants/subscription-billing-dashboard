@@ -8,7 +8,11 @@ const MAX_LATENCY_MS = 700
 const HTTP_OK = 200
 const HTTP_NO_CONTENT = 204
 
-type RouteResult = { status?: number; body?: unknown }
+type RouteResult = {
+  status?: number
+  body?: unknown
+  headers?: Record<string, string>
+}
 
 type RouteContext = {
   request: Request
@@ -45,10 +49,10 @@ export function route(
       )
     }
     try {
-      const { status = HTTP_OK, body } = await handler(context)
+      const { status = HTTP_OK, body, headers } = await handler(context)
       return status === HTTP_NO_CONTENT
-        ? new HttpResponse(null, { status })
-        : HttpResponse.json(body as never, { status })
+        ? new HttpResponse(null, { status, headers })
+        : HttpResponse.json(body as never, { status, headers })
     } catch (error) {
       if (error instanceof DemoApiError)
         return errorResponse(error.statusCode, error.message)

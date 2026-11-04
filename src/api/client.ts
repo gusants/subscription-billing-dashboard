@@ -7,6 +7,7 @@ type RequestOptions = {
   method?: 'GET' | 'POST'
   query?: Record<string, QueryValue>
   body?: unknown
+  headers?: Record<string, string>
 }
 
 const NO_CONTENT = 204
@@ -47,7 +48,10 @@ export async function request<T>(
   const hasBody = options.body !== undefined
   const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? 'GET',
-    headers: hasBody ? { 'Content-Type': 'application/json' } : undefined,
+    headers: {
+      ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+      ...options.headers,
+    },
     body: hasBody ? JSON.stringify(options.body) : undefined,
   })
 

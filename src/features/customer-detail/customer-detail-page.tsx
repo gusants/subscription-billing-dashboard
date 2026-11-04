@@ -5,6 +5,7 @@ import { formatDate } from '../../lib/format-date'
 import { allPlansQuery } from '../plans/plans-queries'
 import { AiSummaryPlaceholder } from './ai-summary-placeholder'
 import { ChargesTimeline } from './charges-timeline'
+import { NewSubscriptionDialog } from './new-subscription-dialog'
 import {
   customerDetailQuery,
   primarySubscription,
@@ -38,13 +39,16 @@ export function CustomerDetailPage() {
         </ol>
       </nav>
 
-      <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold tracking-tight">
-          {customer.name}
-        </h1>
-        <p className="text-fg-muted">
-          {customer.email} · Customer since {formatDate(customer.createdAt)}
-        </p>
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold tracking-tight">
+            {customer.name}
+          </h1>
+          <p className="text-fg-muted">
+            {customer.email} · Customer since {formatDate(customer.createdAt)}
+          </p>
+        </div>
+        <NewSubscriptionDialog customerId={customer.id} />
       </header>
 
       {primary ? (

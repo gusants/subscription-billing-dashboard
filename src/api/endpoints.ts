@@ -42,10 +42,13 @@ export const plansApi = {
 
 export const subscriptionsApi = {
   get: (id: string) => request<Subscription>(`/subscriptions/${id}`),
-  create: (input: CreateSubscriptionInput) =>
+  create: (input: CreateSubscriptionInput, idempotencyKey?: string) =>
     request<CreatedSubscription>('/subscriptions', {
       method: 'POST',
       body: input,
+      headers: idempotencyKey
+        ? { 'Idempotency-Key': idempotencyKey }
+        : undefined,
     }),
   cancel: (id: string) =>
     request<Subscription>(`/subscriptions/${id}/cancel`, { method: 'POST' }),
