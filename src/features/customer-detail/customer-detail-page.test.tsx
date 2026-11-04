@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { demoDbStore } from '../../mocks/db/demo-db-store'
 import { renderApp } from '../../test/render-app'
 
@@ -56,5 +56,55 @@ describe('customer detail', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Customers' }),
     ).toBeInTheDocument()
+  })
+})
+
+describe('charges timeline', () => {
+  it('explains every declined attempt', async () => {
+    const { charges, subscriptions } = demoDbStore.getState().db
+    const failed = charges.find((c) => c.status === 'failed')!
+    const customerId = subscriptions.find(
+      (s) => s.id === failed.subscriptionId,
+    )!.customerId
+    renderApp(`/customers/${customerId}`)
+
+    const timeline = await screen.findByRole('list', { name: 'Charges' })
+    const attempts = within(timeline).getAllByRole('list', {
+      name: 'Payment attempts',
+    })[0]!
+    expect(
+      within(attempts).getAllByText(/Attempt \d: Insufficient funds/),
+    ).toHaveLength(failed.attemptCount)
+    expect(
+      within(timeline).getByText('Declined, a retry is scheduled'),
+    ).toBeInTheDocument()
+  })
+
+  it('loads older charges on demand', async () => {
+    const { subscriptions, charges } = demoDbStore.getState().db
+    const longest = subscriptions
+      .map((s) => ({
+        customerId: s.customerId,
+        count: charges.filter((c) => c.subscriptionId === s.id).length,
+      }))
+      .sort((a, b) => b.count - a.count)[0]!
+    const { user } = renderApp(`/customers/${longest.customerId}`)
+
+    const timeline = await screen.findByRole('list', { name: 'Charges' })
+    expect(
+      within(timeline)
+        .getAllByRole('listitem')
+        .filter((li) => li.parentElement === timeline),
+    ).toHaveLength(10)
+
+    await user.click(screen.getByRole('button', { name: 'Load older charges' }))
+
+    await waitFor(() =>
+      expect(
+        within(timeline)
+          .getAllByRole('listitem')
+          .filter((li) => li.parentElement === timeline).length,
+      ).toBeGreaterThan(10),
+    )
   })
 })
