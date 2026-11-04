@@ -2,3 +2,4 @@ pnpm-lock.yaml
 _local
 .impeccable
 src/api/generated
+src/routeTree.gen.ts
