@@ -68,6 +68,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/fake-gateway/charges/{id}/expire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FakeGatewayController_expire"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/fake-gateway/charges/{id}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FakeGatewayController_pay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fake-gateway/reset": {
         parameters: {
             query?: never;
@@ -78,6 +110,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["FakeGatewayController_reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/fake-gateway/subscriptions/{id}/card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FakeGatewayController_replaceCardToken"];
         delete?: never;
         options?: never;
         head?: never;
@@ -158,6 +206,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["SubscriptionsController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/gateway": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WebhooksController_receive"];
         delete?: never;
         options?: never;
         head?: never;
@@ -258,12 +322,28 @@ export interface components {
             currentPeriodStart: string;
             customerId: string;
             id: string;
-            /** @description Outcome of the first charge. Null for pix and boleto, which are charged in a later phase */
+            /** @description First charge of the subscription. Card charges settle immediately; pix and boleto stay pending and carry their expiry and payment instructions */
             latestCharge: {
                 amountCents: number;
+                /**
+                 * Format: date-time
+                 * @description Present only on pix and boleto charges: when payment expires
+                 */
+                expiresAt?: string;
                 /** @description Present only when the gateway declined the charge */
                 failureReason?: string;
                 id: string;
+                /** @description Present only on pix and boleto charges: what the customer pays with */
+                paymentInstructions?: {
+                    copyPaste: string;
+                    /** @enum {string} */
+                    type: "pix";
+                } | {
+                    barcode?: string;
+                    digitableLine: string;
+                    /** @enum {string} */
+                    type: "boleto";
+                };
                 /** @enum {string} */
                 status: "pending" | "paid" | "failed" | "expired" | "uncollectible";
             } | null;
@@ -343,6 +423,71 @@ export interface components {
             message: string;
             statusCode: number;
         };
+        GatewayChargeResponseDto_Output: {
+            amountCents: number;
+            /** Format: date-time */
+            createdAt: string;
+            customerId: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            externalRef: string;
+            /** @enum {string} */
+            failureReason?: "insufficient_funds" | "expired_card" | "invalid_token";
+            id: string;
+            /** @enum {string} */
+            method: "card" | "pix" | "boleto";
+            /** Format: date-time */
+            paidAt?: string;
+            paymentInstructions?: {
+                copyPaste: string;
+                /** @enum {string} */
+                type: "pix";
+            } | {
+                barcode?: string;
+                digitableLine: string;
+                /** @enum {string} */
+                type: "boleto";
+            };
+            /** @enum {string} */
+            status: "pending" | "paid" | "failed" | "expired";
+        };
+        GatewayWebhookDto: {
+            /** Format: date-time */
+            createdAt: string;
+            data: {
+                charge: {
+                    amountCents: number;
+                    /** Format: date-time */
+                    createdAt: string;
+                    customerId: string;
+                    /** Format: date-time */
+                    expiresAt?: string;
+                    externalRef: string;
+                    /** @enum {string} */
+                    failureReason?: "insufficient_funds" | "expired_card" | "invalid_token";
+                    id: string;
+                    /** @enum {string} */
+                    method: "card" | "pix" | "boleto";
+                    /** Format: date-time */
+                    paidAt?: string;
+                    paymentInstructions?: {
+                        copyPaste: string;
+                        /** @enum {string} */
+                        type: "pix";
+                    } | {
+                        barcode?: string;
+                        digitableLine: string;
+                        /** @enum {string} */
+                        type: "boleto";
+                    };
+                    /** @enum {string} */
+                    status: "pending" | "paid" | "failed" | "expired";
+                };
+            };
+            id: string;
+            /** @enum {string} */
+            type: "charge.paid" | "charge.failed" | "charge.expired";
+        };
         PlanListResponseDto_Output: {
             data: {
                 active: boolean;
@@ -375,6 +520,9 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        ReplaceCardTokenDto: {
+            cardToken: string;
+        };
         SubscriptionResponseDto_Output: {
             /** Format: date-time */
             billingAnchor: string;
@@ -396,6 +544,10 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        WebhookReceivedResponseDto_Output: {
+            /** @enum {boolean} */
+            received: true;
+        };
     };
     responses: never;
     parameters: never;
@@ -408,7 +560,10 @@ export interface operations {
     ChargesController_retry: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Client-generated key (1 to 255 printable ASCII characters). The same key with the same request replays the first response with the header Idempotent-Replayed: true; the same key with a different body answers 422; the same key while the first request is still running answers 409 */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -425,6 +580,15 @@ export interface operations {
                     "application/json": components["schemas"]["ChargeRetryResponseDto_Output"];
                 };
             };
+            /** @description Invalid Idempotency-Key */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -433,7 +597,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponseDto"];
                 };
             };
-            /** @description The charge cannot be retried: it is paid, its subscription is canceled, it was modified concurrently, or it is pending with an attempt still in flight within the lease (CHARGE_ATTEMPT_LEASE_SECONDS) */
+            /** @description The charge cannot be retried: it is paid, its subscription is canceled, it was modified concurrently, or it is pending with an attempt still in flight within the lease (CHARGE_ATTEMPT_LEASE_SECONDS); or a request with the same Idempotency-Key is still being processed */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -442,8 +606,17 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponseDto"];
                 };
             };
-            /** @description The subscription has no card token or the customer has no gateway customer */
+            /** @description The subscription has no card token or the customer has no gateway customer; or the Idempotency-Key was already used with a different request */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description An Idempotency-Key was sent and the idempotency store is unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -593,6 +766,82 @@ export interface operations {
             };
         };
     };
+    FakeGatewayController_expire: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Development only: marks the pending pix or boleto gateway charge of our charge id as expired */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayChargeResponseDto_Output"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    FakeGatewayController_pay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Development only: marks the pending pix or boleto gateway charge of our charge id as paid */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayChargeResponseDto_Output"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
     FakeGatewayController_reset: {
         parameters: {
             query?: never;
@@ -608,6 +857,46 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    FakeGatewayController_replaceCardToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceCardTokenDto"];
+            };
+        };
+        responses: {
+            /** @description Development only: replaces the card token charged on the next attempt */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
             };
         };
     };
@@ -824,7 +1113,10 @@ export interface operations {
     SubscriptionsController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Client-generated key (1 to 255 printable ASCII characters). The same key with the same request replays the first response with the header Idempotent-Replayed: true; the same key with a different body answers 422; the same key while the first request is still running answers 409 */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -842,6 +1134,7 @@ export interface operations {
                     "application/json": components["schemas"]["CreatedSubscriptionResponseDto_Output"];
                 };
             };
+            /** @description Invalid body or invalid Idempotency-Key */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -858,6 +1151,16 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description A request with the same Idempotency-Key is still being processed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description The request cannot be processed, or the Idempotency-Key was already used with a different body */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -866,6 +1169,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description The gateway is unavailable, or an Idempotency-Key was sent and the idempotency store is unavailable */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -933,6 +1237,51 @@ export interface operations {
                 };
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    WebhooksController_receive: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Internal endpoint called by the payment gateway. Format t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>." + raw body>. Rejected with 401 when missing, malformed, mismatched or when t is more than 5 minutes away from the server clock */
+                "x-gateway-signature": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayWebhookDto"];
+            };
+        };
+        responses: {
+            /** @description The event was received. Also the answer for a duplicated event id, an unknown charge, a transition the charge state machine rejects, an amount or customer that does not match the charge, and a payment that needs a refund; the outcome is recorded in webhook_events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookReceivedResponseDto_Output"];
+                };
+            };
+            /** @description The signature is valid but the payload is not a gateway event */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description The signature header is missing, invalid or out of the allowed window */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
