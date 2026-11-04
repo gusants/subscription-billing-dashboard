@@ -79,6 +79,7 @@ export function RevenueChart({ points, openMonth }: RevenueChartProps) {
     >
       <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
         <BarChart
+          accessibilityLayer={false}
           data={points}
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
         >

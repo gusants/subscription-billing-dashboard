@@ -45,7 +45,12 @@ function PlansTable() {
   }
 
   return (
-    <div className="border-border bg-surface overflow-x-auto rounded-lg border">
+    <div
+      role="region"
+      aria-label="Plans table"
+      tabIndex={0}
+      className="border-border bg-surface focus-visible:outline-accent overflow-x-auto rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2"
+    >
       <table
         aria-label="Plans"
         className="w-full border-separate border-spacing-0"

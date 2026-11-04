@@ -90,6 +90,7 @@ export function SubscriptionsByStatusChart({
     >
       <ResponsiveContainer width="100%" height={rows.length * ROW_HEIGHT}>
         <BarChart
+          accessibilityLayer={false}
           data={rows}
           layout="vertical"
           margin={{ top: 0, right: 40, bottom: 0, left: 0 }}
