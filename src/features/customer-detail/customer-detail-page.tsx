@@ -49,6 +49,7 @@ export function CustomerDetailPage() {
 
       {primary ? (
         <SubscriptionOverview
+          customerId={customer.id}
           subscription={primary}
           plan={plans?.get(primary.planId)}
         />
@@ -61,7 +62,7 @@ export function CustomerDetailPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <section
           aria-labelledby="charges-heading"
-          className="flex flex-col gap-3"
+          className="order-last flex flex-col gap-3 lg:order-none"
         >
           <h2 id="charges-heading" className="font-semibold">
             Charges

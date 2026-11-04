@@ -5,7 +5,7 @@ import { useUiPreferences } from '../../lib/ui-preferences'
 import { ThemeSwitcher } from './theme-switcher'
 
 const navItemClass =
-  'flex shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 font-medium text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-soft-fg'
+  'flex shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 max-sm:px-2 max-sm:[&>svg]:hidden font-medium text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-soft-fg'
 
 export function Sidebar() {
   const isSimulatorOpen = useUiPreferences((state) => state.isSimulatorOpen)

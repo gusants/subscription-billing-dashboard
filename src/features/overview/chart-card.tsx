@@ -5,6 +5,7 @@ type ChartCardProps = {
   description: string
   summary: string
   table: ReactNode
+  action?: ReactNode
   children: ReactNode
 }
 
@@ -13,6 +14,7 @@ export function ChartCard({
   description,
   summary,
   table,
+  action,
   children,
 }: ChartCardProps) {
   const headingId = `${title.toLowerCase().replaceAll(' ', '-')}-heading`
@@ -30,12 +32,15 @@ export function ChartCard({
       </header>
       <p className="sr-only">{summary}</p>
       <div aria-hidden>{children}</div>
-      <details className="group text-fg-muted">
-        <summary className="hover:text-fg cursor-default select-none">
-          View as table
-        </summary>
-        <div className="mt-2 overflow-x-auto">{table}</div>
-      </details>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <details className="group text-fg-muted">
+          <summary className="hover:text-fg cursor-default select-none">
+            View as table
+          </summary>
+          <div className="mt-2 overflow-x-auto">{table}</div>
+        </details>
+        {action}
+      </div>
     </section>
   )
 }

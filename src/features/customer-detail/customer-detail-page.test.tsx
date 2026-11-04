@@ -26,9 +26,15 @@ describe('customer detail', () => {
     })
     expect(within(overview).getByText('Active')).toBeInTheDocument()
     expect(
-      await within(overview).findByText('Studio · R$389.90/mo'),
+      await within(overview).findByText('Amount · Studio'),
     ).toBeInTheDocument()
-    expect(await within(overview).findByText('Card')).toBeInTheDocument()
+    expect(within(overview).getByText('R$389.90/mo')).toBeInTheDocument()
+    expect(
+      await within(overview).findByText('None scheduled'),
+    ).toBeInTheDocument()
+    expect(
+      await within(overview).findByText(/^R\$\d{1,3}(,\d{3})*\.\d{2}$/),
+    ).toBeInTheDocument()
 
     const subscriptions = screen.getByRole('region', { name: 'Subscriptions' })
     expect(within(subscriptions).getAllByRole('listitem')).toHaveLength(2)
@@ -68,15 +74,23 @@ describe('charges timeline', () => {
     )!.customerId
     renderApp(`/customers/${customerId}`)
 
-    const timeline = await screen.findByRole('list', { name: 'Charges' })
-    const attempts = within(timeline).getAllByRole('list', {
-      name: 'Payment attempts',
-    })[0]!
+    const table = await screen.findByRole('table', { name: 'Charges' })
+    const attemptRows = within(table)
+      .getAllByRole('row')
+      .filter((row) => /Attempt \d/.test(row.textContent ?? ''))
+    const declinedRows = attemptRows.filter((row) =>
+      row.textContent?.includes('Insufficient funds'),
+    )
+    expect(declinedRows.length).toBeGreaterThanOrEqual(failed.attemptCount)
     expect(
-      within(attempts).getAllByText(/Attempt \d: Insufficient funds/),
-    ).toHaveLength(failed.attemptCount)
+      within(table).getByText(/^Next retry [A-Z][a-z]{2} \d{1,2}, \d{4}$/),
+    ).toBeInTheDocument()
+
+    const overview = screen.getByRole('region', {
+      name: 'Subscription overview',
+    })
     expect(
-      within(timeline).getByText('Declined, a retry is scheduled'),
+      within(overview).getByText(/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/),
     ).toBeInTheDocument()
   })
 
@@ -90,7 +104,7 @@ describe('charges timeline', () => {
       .sort((a, b) => b.count - a.count)[0]!
     const { user } = renderApp(`/customers/${longest.customerId}`)
 
-    const timeline = await screen.findByRole('list', { name: 'Charges' })
+    const timeline = await screen.findByRole('list', { name: 'Charges list' })
     expect(
       within(timeline)
         .getAllByRole('listitem')

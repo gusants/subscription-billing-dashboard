@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { MetricsOverview } from '../../api/contract'
 import { formatCurrency } from '../../lib/format-currency'
 import { formatInteger, formatPercent } from '../../lib/format-number'
@@ -34,6 +35,15 @@ export function KpiGrid({ current, previous, comparison }: KpiGridProps) {
           value={formatInteger(current.pastDueSubscriptions)}
           delta={deltas?.pastDue}
           comparison={comparison}
+          action={
+            <Link
+              to="/customers"
+              search={{ status: 'past_due' }}
+              className="text-accent hover:text-accent-hover text-xs font-medium hover:underline"
+            >
+              View past due customers
+            </Link>
+          }
         />
         <KpiCard
           label="Delinquency rate"

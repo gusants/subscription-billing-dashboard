@@ -4,6 +4,7 @@ import { QueryError } from '../../components/feedback/query-error'
 import { Skeleton } from '../../components/feedback/skeleton'
 import { Button } from '../../components/ui/button'
 import { ChargeItem } from './charge-item'
+import { ChargesTable } from './charges-table'
 import { customerChargesQuery } from './charges-queries'
 
 const PLACEHOLDER_CHARGES = 4
@@ -49,9 +50,12 @@ export function ChargesTimeline({ customerId }: { customerId: string }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border lg:block">
+        <ChargesTable charges={charges} />
+      </div>
       <ol
-        aria-label="Charges"
-        className="divide-border border-border bg-surface divide-y rounded-lg border"
+        aria-label="Charges list"
+        className="divide-border border-border bg-surface divide-y rounded-lg border lg:hidden"
       >
         {charges.map((charge) => (
           <ChargeItem key={charge.id} charge={charge} />

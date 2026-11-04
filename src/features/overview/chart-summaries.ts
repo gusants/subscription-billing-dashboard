@@ -2,7 +2,7 @@ import type { RevenuePoint } from '../../api/contract'
 import { formatCurrency } from '../../lib/format-currency'
 import { formatLongMonth } from '../../lib/format-month'
 
-export function describeRevenue(points: RevenuePoint[]) {
+export function describeRevenue(points: RevenuePoint[], openMonth?: string) {
   const first = points[0]
   const last = points.at(-1)
   const best = points.reduce<RevenuePoint | undefined>(
@@ -11,7 +11,7 @@ export function describeRevenue(points: RevenuePoint[]) {
     undefined,
   )
   if (!first || !last || !best) return 'No revenue recorded in this period.'
-  return `Revenue went from ${formatCurrency(first.revenueCents)} in ${formatLongMonth(first.month)} to ${formatCurrency(last.revenueCents)} in ${formatLongMonth(last.month)}. The highest month was ${formatLongMonth(best.month)} with ${formatCurrency(best.revenueCents)}.`
+  return `Revenue went from ${formatCurrency(first.revenueCents)} in ${formatLongMonth(first.month)} to ${formatCurrency(last.revenueCents)} in ${formatLongMonth(last.month)}${last.month === openMonth ? ' so far' : ''}. The highest month was ${formatLongMonth(best.month)} with ${formatCurrency(best.revenueCents)}.`
 }
 
 export function describeSubscriptionsByStatus(

@@ -36,7 +36,7 @@ Built around the Brazilian payment reality: Pix, boleto, and card retries with e
 - Stack already set: React 19, Vite, TypeScript strict, Tailwind v4, TanStack Router / Query / Form, Zod, Zustand (persisted to localStorage), Recharts, React Aria Components (unstyled primitives), MSW, Vitest, Playwright.
 - React 19 features used where they fit for real: `useActionState`, `useOptimistic` (retry charge), form `action` with `useFormStatus`.
 - In demo mode the AI summary returns pre-written summaries from the seed.
-- Open: dark theme is optional and undecided.
+- Light and dark themes ship as equals (confirmed 2026-11-03).
 
 ## Brand Commitments
 

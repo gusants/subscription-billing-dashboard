@@ -33,3 +33,10 @@ export function primarySubscription(subscriptions: SubscriptionRef[]) {
       b.currentPeriodEnd.localeCompare(a.currentPeriodEnd),
   )[0]
 }
+
+export function customerSummaryQuery(customerId: string) {
+  return queryOptions({
+    queryKey: queryKeys.customers.summary(customerId),
+    queryFn: () => customersApi.summary(customerId),
+  })
+}

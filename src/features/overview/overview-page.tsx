@@ -21,6 +21,11 @@ const periodOptions = overviewPeriods.map((period) => ({
   label: overviewPeriodLabels[period],
 }))
 
+function openMonth(periodEnd: string, today: Date) {
+  const todayIso = today.toISOString().slice(0, 10)
+  return periodEnd >= todayIso ? periodEnd.slice(0, 7) : undefined
+}
+
 function hasNoData(overview: { subscriptionsByStatus: { count: number }[] }) {
   return overview.subscriptionsByStatus.every((entry) => entry.count === 0)
 }
@@ -72,7 +77,12 @@ export function OverviewPage() {
           title="Revenue by month"
           skeletonClassName="h-80"
         >
-          {(data) => <RevenueChart points={data.revenueByMonth} />}
+          {(data) => (
+            <RevenueChart
+              points={data.revenueByMonth}
+              openMonth={openMonth(ranges.current.to, today)}
+            />
+          )}
         </WidgetState>
         <WidgetState
           query={current}

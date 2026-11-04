@@ -1,14 +1,19 @@
 import {
   Bar,
   BarChart,
+  Cell,
   LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
+import { Link, useNavigate } from '@tanstack/react-router'
 import type { SubscriptionsByStatus } from '../../api/contract'
-import { subscriptionStatusLabel } from '../../lib/billing-labels'
+import {
+  subscriptionStatusLabel,
+  type StatusTone,
+} from '../../lib/billing-labels'
 import { formatInteger } from '../../lib/format-number'
 import { ChartCard } from './chart-card'
 import { describeSubscriptionsByStatus } from './chart-summaries'
@@ -20,12 +25,19 @@ const BAR_RADIUS: [number, number, number, number] = [0, 4, 4, 0]
 const AXIS_TICK = { fill: 'var(--fg-muted)', fontSize: 13 }
 const VALUE_LABEL = { fill: 'var(--fg)', fontSize: 13 }
 
-type StatusRow = SubscriptionsByStatus & { label: string }
+type StatusRow = SubscriptionsByStatus & { label: string; tone: StatusTone }
+
+const toneFill: Record<StatusTone, string> = {
+  success: 'var(--chart-accent)',
+  danger: 'var(--danger)',
+  warning: 'var(--warning)',
+  neutral: 'var(--fg-subtle)',
+}
 
 function toRows(entries: SubscriptionsByStatus[]): StatusRow[] {
   return entries.map((entry) => ({
     ...entry,
-    label: subscriptionStatusLabel(entry.status).label,
+    ...subscriptionStatusLabel(entry.status),
   }))
 }
 
@@ -56,6 +68,9 @@ export function SubscriptionsByStatusChart({
   entries: SubscriptionsByStatus[]
 }) {
   const rows = toRows(entries)
+  const navigate = useNavigate()
+  const showCustomers = (row: StatusRow) =>
+    void navigate({ to: '/customers', search: { status: row.status } })
 
   return (
     <ChartCard
@@ -63,6 +78,15 @@ export function SubscriptionsByStatusChart({
       description="Every subscription at the end of the period"
       summary={describeSubscriptionsByStatus(rows)}
       table={<StatusTable rows={rows} />}
+      action={
+        <Link
+          to="/customers"
+          search={{ status: 'past_due' }}
+          className="text-accent hover:text-accent-hover font-medium hover:underline"
+        >
+          View past due customers
+        </Link>
+      }
     >
       <ResponsiveContainer width="100%" height={rows.length * ROW_HEIGHT}>
         <BarChart
@@ -94,11 +118,15 @@ export function SubscriptionsByStatusChart({
           />
           <Bar
             dataKey="count"
-            fill="var(--chart-accent)"
             radius={BAR_RADIUS}
             maxBarSize={MAX_BAR_SIZE}
             minPointSize={2}
+            cursor="pointer"
+            onClick={(entry) => showCustomers(entry.payload as StatusRow)}
           >
+            {rows.map((row) => (
+              <Cell key={row.status} fill={toneFill[row.tone]} />
+            ))}
             <LabelList dataKey="count" position="right" style={VALUE_LABEL} />
           </Bar>
         </BarChart>

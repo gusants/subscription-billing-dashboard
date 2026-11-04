@@ -13,6 +13,7 @@ type KpiCardProps = {
   delta: KpiDelta | undefined
   comparison: string
   footnote?: ReactNode
+  action?: ReactNode
 }
 
 const directionIcon = { up: ArrowUpRight, down: ArrowDownRight, flat: Minus }
@@ -28,6 +29,7 @@ export function KpiCard({
   delta,
   comparison,
   footnote,
+  action,
 }: KpiCardProps) {
   const DeltaIcon = delta ? directionIcon[delta.direction] : null
 
@@ -49,6 +51,7 @@ export function KpiCard({
             <span className="text-fg-subtle">{comparison}</span>
           </span>
         )}
+        {action}
         {footnote && <span className="text-fg-subtle text-xs">{footnote}</span>}
       </dd>
     </div>

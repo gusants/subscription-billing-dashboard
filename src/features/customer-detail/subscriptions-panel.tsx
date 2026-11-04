@@ -41,8 +41,12 @@ export function SubscriptionsPanel({
                     <span className="sr-only"> (shown above)</span>
                   )}
                 </span>
-                <span className="text-fg-muted tabular-nums">
-                  {plan && `${formatPlanPrice(plan)} · `}
+                {plan && (
+                  <span className="text-fg-muted tabular-nums">
+                    {formatPlanPrice(plan)}
+                  </span>
+                )}
+                <span className="text-fg-muted whitespace-nowrap tabular-nums">
                   {subscription.status === 'canceled' ? 'Ended' : 'Renews'}{' '}
                   {formatDate(subscription.currentPeriodEnd)}
                 </span>
