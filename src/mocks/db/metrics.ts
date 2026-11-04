@@ -5,7 +5,7 @@ import type {
   Plan,
   SubscriptionStatus,
 } from '../../api/contract'
-import type { DemoDatabase } from '../demo-types'
+import type { DemoCharge, DemoDatabase, DemoSubscription } from '../demo-types'
 import { addMonths, daysBetween } from './clock'
 import { notFound } from './demo-api-error'
 import { chargesOf, findCustomer, findPlan, subscriptionsOf } from './lookups'
@@ -64,6 +64,45 @@ function revenueByMonth(db: DemoDatabase, lastMonth: Date) {
   }))
 }
 
+const END_OF_DAY = 'T23:59:59.999Z'
+
+function isPaidBy(charge: DemoCharge, at: string) {
+  return charge.paidAt !== null && charge.paidAt <= at
+}
+
+function becameOverdueAt(charge: DemoCharge) {
+  const firstDecline = charge.attempts.find(
+    (attempt) => attempt.result === 'declined',
+  )
+  return (
+    firstDecline?.createdAt ??
+    (charge.status === 'expired' ? charge.expiresAt : null)
+  )
+}
+
+function statusAt(
+  db: DemoDatabase,
+  subscription: DemoSubscription,
+  at: string,
+): SubscriptionStatus | null {
+  if (at >= db.now) return subscription.status
+  if (subscription.createdAt > at) return null
+  if (subscription.canceledAt && subscription.canceledAt <= at)
+    return 'canceled'
+  const charges = db.charges.filter(
+    (charge) =>
+      charge.subscriptionId === subscription.id && charge.createdAt <= at,
+  )
+  const isOverdue = charges.some((charge) => {
+    const overdueSince = becameOverdueAt(charge)
+    return overdueSince !== null && overdueSince <= at && !isPaidBy(charge, at)
+  })
+  if (isOverdue) return 'past_due'
+  return charges.some((charge) => isPaidBy(charge, at))
+    ? 'active'
+    : 'incomplete'
+}
+
 export function metricsOverview(
   db: DemoDatabase,
   params: MetricsOverviewParams,
@@ -71,23 +110,25 @@ export function metricsOverview(
   const now = new Date(db.now)
   const from = params.from ?? startOfMonth(now).toISOString().slice(0, 10)
   const to = params.to ?? now.toISOString().slice(0, 10)
-  const billable = db.subscriptions.filter(
-    (s) => s.status === 'active' || s.status === 'past_due',
+  const statuses = db.subscriptions.flatMap((subscription) => {
+    const status = statusAt(db, subscription, `${to}${END_OF_DAY}`)
+    return status ? [{ subscription, status }] : []
+  })
+  const count = (status: SubscriptionStatus) =>
+    statuses.filter((entry) => entry.status === status).length
+  const billable = statuses.filter(
+    (entry) => entry.status === 'active' || entry.status === 'past_due',
   )
-  const activeSubscriptions = db.subscriptions.filter(
-    (s) => s.status === 'active',
-  ).length
-  const pastDueSubscriptions = db.subscriptions.filter(
-    (s) => s.status === 'past_due',
-  ).length
+  const pastDueSubscriptions = count('past_due')
 
   return {
     period: { from, to },
     mrrCents: billable.reduce(
-      (total, s) => total + monthlyAmountCents(findPlan(db, s.planId)),
+      (total, { subscription }) =>
+        total + monthlyAmountCents(findPlan(db, subscription.planId)),
       0,
     ),
-    activeSubscriptions,
+    activeSubscriptions: count('active'),
     pastDueSubscriptions,
     delinquencyRate:
       billable.length === 0
@@ -96,7 +137,7 @@ export function metricsOverview(
     revenueByMonth: revenueByMonth(db, new Date(to)),
     subscriptionsByStatus: SUBSCRIPTION_STATUSES.map((status) => ({
       status,
-      count: db.subscriptions.filter((s) => s.status === status).length,
+      count: count(status),
     })),
   }
 }

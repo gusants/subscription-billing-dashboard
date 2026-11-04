@@ -74,3 +74,47 @@ describe('demo metrics', () => {
     expect(summary.summary).toBe(db.summaries[customer.id]?.summary)
   })
 })
+
+describe('demo metrics over time', () => {
+  it('reconstructs earlier periods from the charge history', () => {
+    const db = testDatabase()
+    const lastMonth = metricsOverview(db, {
+      from: '2026-10-01',
+      to: '2026-10-31',
+    })
+    const sixMonthsAgo = metricsOverview(db, {
+      from: '2026-05-01',
+      to: '2026-05-31',
+    })
+    const total = (overview: typeof lastMonth) =>
+      overview.subscriptionsByStatus.reduce((sum, s) => sum + s.count, 0)
+
+    expect(total(sixMonthsAgo)).toBeLessThan(total(lastMonth))
+    expect(lastMonth.activeSubscriptions).toBeGreaterThan(0)
+    expect(lastMonth.revenueByMonth.at(-1)?.month).toBe('2026-10')
+  })
+
+  it('counts a declined renewal as past due from the decline until it is paid', () => {
+    const db = testDatabase()
+    const recovered = db.charges.find(
+      (charge) =>
+        charge.status === 'paid' &&
+        charge.attempts.length === 2 &&
+        charge.attempts[0]?.result === 'declined',
+    )!
+    const subscription = db.subscriptions.find(
+      (s) => s.id === recovered.subscriptionId,
+    )!
+    const declinedDay = recovered.attempts[0]!.createdAt.slice(0, 10)
+    const paidDay = recovered.paidAt!.slice(0, 10)
+
+    const pastDueOnDecline = metricsOverview(db, { to: declinedDay })
+    const afterPayment = metricsOverview(db, { to: paidDay })
+
+    expect(pastDueOnDecline.pastDueSubscriptions).toBeGreaterThanOrEqual(1)
+    expect(subscription.status).not.toBe('past_due')
+    expect(afterPayment.pastDueSubscriptions).toBeLessThanOrEqual(
+      pastDueOnDecline.pastDueSubscriptions,
+    )
+  })
+})
