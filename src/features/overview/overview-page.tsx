@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { Skeleton } from '../../components/feedback/skeleton'
 import { Select } from '../../components/ui/select'
 import { KpiGrid } from './kpi-grid'
 import {
@@ -10,8 +11,7 @@ import {
   periodRanges,
 } from './overview-period'
 import { metricsOverviewQuery } from './overview-queries'
-import { RevenueChart } from './revenue-chart'
-import { SubscriptionsByStatusChart } from './subscriptions-by-status-chart'
+import { RevenueChart, SubscriptionsByStatusChart } from './lazy-charts'
 import { WidgetState } from './widget-state'
 
 const route = getRouteApi('/')
@@ -78,10 +78,12 @@ export function OverviewPage() {
           skeletonClassName="h-80"
         >
           {(data) => (
-            <RevenueChart
-              points={data.revenueByMonth}
-              openMonth={openMonth(ranges.current.to, today)}
-            />
+            <Suspense fallback={<ChartSkeleton />}>
+              <RevenueChart
+                points={data.revenueByMonth}
+                openMonth={openMonth(ranges.current.to, today)}
+              />
+            </Suspense>
           )}
         </WidgetState>
         <WidgetState
@@ -90,10 +92,18 @@ export function OverviewPage() {
           skeletonClassName="h-80"
         >
           {(data) => (
-            <SubscriptionsByStatusChart entries={data.subscriptionsByStatus} />
+            <Suspense fallback={<ChartSkeleton />}>
+              <SubscriptionsByStatusChart
+                entries={data.subscriptionsByStatus}
+              />
+            </Suspense>
           )}
         </WidgetState>
       </div>
     </div>
   )
+}
+
+function ChartSkeleton() {
+  return <Skeleton className="h-80" />
 }
