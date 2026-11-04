@@ -21,7 +21,7 @@ describe('overview page', () => {
     renderApp('/')
 
     expect(await metricValue('Monthly recurring revenue')).toMatch(
-      /^R\$\d{1,3}(,\d{3})*\.\d{2}$/,
+      /^R\$\s\d{1,3}(\.\d{3})*,\d{2}$/,
     )
     expect(await metricValue('Active subscriptions')).toBe(String(active))
     expect(await metricValue('Past due subscriptions')).toBe(String(pastDue))

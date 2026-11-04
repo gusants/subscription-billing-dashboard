@@ -1,6 +1,6 @@
 const CENTS_PER_REAL = 100
 
-const brlFormatter = new Intl.NumberFormat('en-US', {
+const brlFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 })
@@ -9,7 +9,7 @@ export function formatCurrency(amountCents: number) {
   return brlFormatter.format(amountCents / CENTS_PER_REAL)
 }
 
-const compactBrlFormatter = new Intl.NumberFormat('en-US', {
+const compactBrlFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
   notation: 'compact',

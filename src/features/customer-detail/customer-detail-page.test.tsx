@@ -28,12 +28,12 @@ describe('customer detail', () => {
     expect(
       await within(overview).findByText('Amount · Studio'),
     ).toBeInTheDocument()
-    expect(within(overview).getByText('R$389.90/mo')).toBeInTheDocument()
+    expect(within(overview).getByText(/^R\$\s389,90\/mo$/)).toBeInTheDocument()
     expect(
       await within(overview).findByText('None scheduled'),
     ).toBeInTheDocument()
     expect(
-      await within(overview).findByText(/^R\$\d{1,3}(,\d{3})*\.\d{2}$/),
+      await within(overview).findByText(/^R\$\s\d{1,3}(\.\d{3})*,\d{2}$/),
     ).toBeInTheDocument()
 
     const subscriptions = screen.getByRole('region', { name: 'Subscriptions' })

@@ -18,7 +18,7 @@ const planFormSchema = z.object({
     .max(MAX_NAME_LENGTH, 'Keep the name under 60 characters'),
   price: z
     .string()
-    .refine(isMoneyInput, 'Enter a price like 389.90')
+    .refine(isMoneyInput, 'Enter a price like 389,90')
     .refine(
       (value) => !isMoneyInput(value) || parseMoneyToCents(value) > 0,
       'Price must be above zero',
@@ -92,7 +92,7 @@ export function PlanForm() {
             <field.TextField
               label="Price (R$)"
               inputMode="decimal"
-              placeholder="389.90"
+              placeholder="389,90"
               description="Charged each billing period"
             />
           )}

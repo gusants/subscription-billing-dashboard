@@ -7,11 +7,11 @@ describe('plans page', () => {
 
     const table = await screen.findByRole('table', { name: 'Plans' })
     expect(
-      within(table).getByRole('row', { name: /Studio R\$389\.90\/mo Active/ }),
+      within(table).getByRole('row', { name: /Studio R\$\s389,90\/mo Active/ }),
     ).toBeInTheDocument()
     expect(
       within(table).getByRole('row', {
-        name: /Studio Annual R\$3,990\.00\/yr/,
+        name: /Studio Annual R\$\s3\.990,00\/yr/,
       }),
     ).toBeInTheDocument()
   })
@@ -25,11 +25,11 @@ describe('plans page', () => {
     await user.click(screen.getByRole('button', { name: 'Create plan' }))
 
     expect(
-      await screen.findByText('Enter a price like 389.90'),
+      await screen.findByText('Enter a price like 389,90'),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('textbox', { name: 'Price (R$)' }),
-    ).toHaveAccessibleDescription('Enter a price like 389.90')
+    ).toHaveAccessibleDescription('Enter a price like 389,90')
   })
 
   it('creates a plan, confirms it and shows it in the list', async () => {
@@ -49,7 +49,7 @@ describe('plans page', () => {
     await waitFor(() =>
       expect(
         within(table).getByRole('row', {
-          name: /Ensemble R\$599\.90\/yr Active/,
+          name: /Ensemble R\$\s599,90\/yr Active/,
         }),
       ).toBeInTheDocument(),
     )
