@@ -1,9 +1,27 @@
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
+import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+const DEFAULT_API_URL = 'http://localhost:3000'
+const API_PREFIX = /^\/api/
+
+function liveApiProxy(mode: string) {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  if (env.VITE_API_MODE !== 'api') return undefined
+  return {
+    '/api': {
+      target: env.VITE_API_URL || DEFAULT_API_URL,
+      changeOrigin: true,
+      rewrite: (path: string) => path.replace(API_PREFIX, ''),
+    },
+  }
+}
+
+export default defineConfig(({ mode }) => ({
+  server: { proxy: liveApiProxy(mode) },
+  preview: { proxy: liveApiProxy(mode) },
   plugins: [
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     react(),
@@ -33,4 +51,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

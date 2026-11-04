@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { Layers, LayoutDashboard, SlidersHorizontal, Users } from 'lucide-react'
 import { ToggleButton } from 'react-aria-components'
 import { useUiPreferences } from '../../lib/ui-preferences'
+import { DataSourceBadge } from './data-source-badge'
 import { ThemeSwitcher } from './theme-switcher'
 
 const navItemClass =
@@ -14,12 +15,15 @@ export function Sidebar() {
   return (
     <header className="border-border bg-surface flex flex-col gap-3 border-b px-4 py-3 lg:sticky lg:top-0 lg:h-dvh lg:border-r lg:border-b-0 lg:px-3 lg:py-5">
       <div className="flex items-center justify-between gap-3 lg:px-2.5 lg:pb-4">
-        <Link to="/" className="flex flex-col leading-tight">
-          <span className="text-[0.9375rem] font-semibold tracking-tight">
-            Cadência
-          </span>
-          <span className="text-fg-subtle text-xs">Billing</span>
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <Link to="/" className="flex flex-col leading-tight">
+            <span className="text-[0.9375rem] font-semibold tracking-tight">
+              Cadência
+            </span>
+            <span className="text-fg-subtle text-xs">Billing</span>
+          </Link>
+          <DataSourceBadge />
+        </div>
         <div className="lg:hidden">
           <ThemeSwitcher />
         </div>

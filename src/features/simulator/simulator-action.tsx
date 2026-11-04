@@ -15,6 +15,7 @@ type SimulatorActionProps = {
   description: string
   submitLabel: string
   isDisabled?: boolean
+  unavailableReason?: string
   run: (formData: FormData) => Promise<string>
   onDone: (title: string, outcome: ActionOutcome) => void
   children?: ReactNode
@@ -49,6 +50,7 @@ export function SimulatorAction({
   description,
   submitLabel,
   isDisabled = false,
+  unavailableReason,
   run,
   onDone,
   children,
@@ -83,10 +85,16 @@ export function SimulatorAction({
       <div className="flex flex-col">
         <h3 className="font-medium">{title}</h3>
         <p className="text-fg-muted text-xs">{description}</p>
+        {unavailableReason && (
+          <p className="text-fg-subtle mt-1 text-xs">{unavailableReason}</p>
+        )}
       </div>
       {children}
       <div className="flex justify-end">
-        <SubmitAction label={submitLabel} isDisabled={isDisabled} />
+        <SubmitAction
+          label={submitLabel}
+          isDisabled={isDisabled || Boolean(unavailableReason)}
+        />
       </div>
       <p
         role="status"

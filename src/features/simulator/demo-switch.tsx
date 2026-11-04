@@ -4,6 +4,7 @@ type DemoSwitchProps = {
   label: string
   description: string
   isSelected: boolean
+  isDisabled?: boolean
   onChange: (isSelected: boolean) => void
 }
 
@@ -11,13 +12,15 @@ export function DemoSwitch({
   label,
   description,
   isSelected,
+  isDisabled = false,
   onChange,
 }: DemoSwitchProps) {
   return (
     <Switch
       isSelected={isSelected}
+      isDisabled={isDisabled}
       onChange={onChange}
-      className="group border-border flex cursor-default items-center justify-between gap-3 rounded-lg border p-3"
+      className="group border-border flex cursor-default items-center justify-between gap-3 rounded-lg border p-3 data-disabled:[&>span:last-child]:opacity-50"
     >
       <span className="flex flex-col">
         <span className="font-medium">{label}</span>

@@ -34,6 +34,14 @@ describe('AppShell', () => {
     ).toHaveAttribute('aria-current', 'page')
   })
 
+  it('labels demo data as such', async () => {
+    renderApp('/')
+    await screen.findByRole('heading', { name: 'Overview' })
+
+    expect(screen.getByText('Demo data')).toBeInTheDocument()
+    expect(screen.queryByText('Live API')).not.toBeInTheDocument()
+  })
+
   it('offers a skip link to the main content', async () => {
     renderApp('/')
     await screen.findByRole('heading', { name: 'Overview' })

@@ -15,6 +15,18 @@ import { useSimulatorTargets } from './use-simulator-targets'
 
 const MAX_LOG_ENTRIES = 5
 const NO_CUSTOMER = 'Open a customer to target their charges.'
+const LIVE_API_NOTES = {
+  retries:
+    'Not in the live API yet. Its queue runs scheduled retries on its own.',
+  reset: 'Only demo data can be reset. The live API keeps its own database.',
+  apiError: 'Demo only. In live mode, real API errors show up as they happen.',
+  llmFailure:
+    'Demo only. In live mode, the API falls back when its AI provider fails.',
+}
+
+function liveApiNote(note: string) {
+  return isDemoMode ? undefined : note
+}
 
 function formValue(formData: FormData, name: string) {
   const value = formData.get(name)
@@ -183,6 +195,7 @@ export function SimulatorPanel() {
             title="Advance retry clock"
             description="Run every scheduled retry now (D+1, D+3, D+7)."
             submitLabel="Run retries"
+            unavailableReason={liveApiNote(LIVE_API_NOTES.retries)}
             onDone={record}
             run={async () => {
               const { promoted } = await simulatorApi.runRetriesNow()
@@ -197,6 +210,7 @@ export function SimulatorPanel() {
             title="Reset demo"
             description="Restore the original demo data."
             submitLabel="Reset"
+            unavailableReason={liveApiNote(LIVE_API_NOTES.reset)}
             onDone={record}
             run={async () => {
               await simulatorApi.reset()
@@ -205,22 +219,26 @@ export function SimulatorPanel() {
             }}
           />
 
-          {isDemoMode && (
-            <>
-              <DemoSwitch
-                label="Simulate API error"
-                description="Every request fails, to show error states."
-                isSelected={isFailing}
-                onChange={toggleFailures}
-              />
-              <DemoSwitch
-                label="Simulate LLM failure"
-                description="AI summaries fall back to rules."
-                isSelected={isLlmFailing}
-                onChange={toggleLlmFailure}
-              />
-            </>
-          )}
+          <DemoSwitch
+            label="Simulate API error"
+            description={
+              liveApiNote(LIVE_API_NOTES.apiError) ??
+              'Every request fails, to show error states.'
+            }
+            isSelected={isFailing}
+            isDisabled={!isDemoMode}
+            onChange={toggleFailures}
+          />
+          <DemoSwitch
+            label="Simulate LLM failure"
+            description={
+              liveApiNote(LIVE_API_NOTES.llmFailure) ??
+              'AI summaries fall back to rules.'
+            }
+            isSelected={isLlmFailing}
+            isDisabled={!isDemoMode}
+            onChange={toggleLlmFailure}
+          />
 
           <SimulatorLog entries={log} />
         </div>
