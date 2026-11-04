@@ -1,6 +1,6 @@
 # Cadência Billing — Subscription Billing Dashboard
 
-**Live demo:** _coming soon_ · runs entirely in the browser, no sign-up, no backend.
+**Demo mode:** `pnpm install && pnpm dev` runs the whole app in the browser, with no backend and no sign-up. The build is a static site ready for any static host (`vercel.json` included).
 
 A React 19 dashboard for billing operations at **Cadência**, a fictional Brazilian SaaS that sells monthly plans to music schools and teachers. It answers three questions fast: how revenue is doing, who is at risk, and why a payment failed. It consumes the [Subscription Payments API](https://github.com/gusants/subscription-payments-api) (NestJS) and ships with a demo mode that runs the same contract in the browser.
 
