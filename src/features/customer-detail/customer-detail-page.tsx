@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import { formatDate } from '../../lib/format-date'
 import { allPlansQuery } from '../plans/plans-queries'
 import { AiSummaryPlaceholder } from './ai-summary-placeholder'
+import { ChargesTimeline } from './charges-timeline'
 import {
   customerDetailQuery,
   primarySubscription,
@@ -65,6 +66,7 @@ export function CustomerDetailPage() {
           <h2 id="charges-heading" className="font-semibold">
             Charges
           </h2>
+          <ChargesTimeline customerId={customer.id} />
         </section>
         <aside className="flex flex-col gap-6">
           <AiSummaryPlaceholder />
