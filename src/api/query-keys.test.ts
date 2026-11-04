@@ -1,4 +1,5 @@
-import { queryKeys } from './query-keys'
+import { QueryClient } from '@tanstack/react-query'
+import { invalidateAfter, keysToInvalidate, queryKeys } from './query-keys'
 
 describe('queryKeys', () => {
   it('nests customer detail keys under the customer so one invalidation covers them', () => {
@@ -23,5 +24,54 @@ describe('queryKeys', () => {
       'subscriptions',
       'sub_1',
     ])
+  })
+})
+
+describe('invalidation map', () => {
+  it.each([
+    [
+      { type: 'charge-paid', customerId: 'cus_1' },
+      [['customers', 'detail', 'cus_1'], ['customers', 'list'], ['metrics']],
+    ],
+    [
+      { type: 'card-changed', subscriptionId: 'sub_1' },
+      [['subscriptions', 'sub_1']],
+    ],
+    [{ type: 'customer-created' }, [['customers', 'list']]],
+    [{ type: 'plan-created' }, [['plans']]],
+  ] as const)('maps %o to the data it changes', (event, keys) => {
+    expect(keysToInvalidate(event)).toEqual(keys)
+  })
+
+  it('refreshes the customer, its subscription, lists and metrics when a subscription changes', () => {
+    const keys = keysToInvalidate({
+      type: 'subscription-canceled',
+      customerId: 'cus_1',
+      subscriptionId: 'sub_1',
+    })
+
+    expect(keys).toContainEqual(['customers', 'detail', 'cus_1'])
+    expect(keys).toContainEqual(['subscriptions', 'sub_1'])
+    expect(keys).toContainEqual(['metrics'])
+  })
+
+  it('refreshes everything after retries run or the demo resets', async () => {
+    const queryClient = new QueryClient()
+    const keys = [
+      ['customers', 'detail', 'cus_1', 'charges', {}],
+      ['subscriptions', 'sub_1'],
+      ['plans', 'list', {}],
+      ['metrics', 'overview', {}],
+    ]
+    keys.forEach((key) => queryClient.setQueryData(key, {}))
+
+    await invalidateAfter(queryClient, { type: 'demo-reset' })
+
+    expect(
+      keys.every((key) => queryClient.getQueryState(key)?.isInvalidated),
+    ).toBe(true)
+    expect(keysToInvalidate({ type: 'retries-run' })).toEqual(
+      keysToInvalidate({ type: 'demo-reset' }),
+    )
   })
 })
