@@ -8,6 +8,7 @@ import {
 import { metricsOverviewQuery } from './overview-queries'
 import { KpiGrid } from './kpi-grid'
 import { RevenueChart } from './revenue-chart'
+import { SubscriptionsByStatusChart } from './subscriptions-by-status-chart'
 
 const DEFAULT_PERIOD: OverviewPeriod = 'this-month'
 
@@ -33,7 +34,14 @@ export function OverviewPage() {
           comparison={comparisonLabel(period)}
         />
       )}
-      {current.data && <RevenueChart points={current.data.revenueByMonth} />}
+      {current.data && (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <RevenueChart points={current.data.revenueByMonth} />
+          <SubscriptionsByStatusChart
+            entries={current.data.subscriptionsByStatus}
+          />
+        </div>
+      )}
     </div>
   )
 }
