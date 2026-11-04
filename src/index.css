@@ -23,6 +23,8 @@
   --danger-soft: light-dark(#fee2e2, #3a1216);
   --warning: light-dark(#b45309, #fbbf24);
   --warning-soft: light-dark(#fef3c7, #352409);
+  --chart-accent: light-dark(#4f46e5, #7078ee);
+  --chart-grid: light-dark(#e2e8f0, #243049);
   --shadow-color: light-dark(rgb(15 23 42 / 0.08), rgb(0 0 0 / 0.45));
 }
 
@@ -55,6 +57,8 @@
   --color-danger-soft: var(--danger-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-chart-accent: var(--chart-accent);
+  --color-chart-grid: var(--chart-grid);
   --shadow-panel:
     0 1px 2px var(--shadow-color), 0 12px 32px -8px var(--shadow-color);
 }

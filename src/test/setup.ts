@@ -1,7 +1,12 @@
 import '@testing-library/jest-dom/vitest'
+import { configure } from '@testing-library/react'
 import { useUiPreferences } from '../lib/ui-preferences'
 import { demoDbStore } from '../mocks/db/demo-db-store'
 import { server } from '../mocks/node'
+
+const ASYNC_QUERY_TIMEOUT_MS = 3000
+
+configure({ asyncUtilTimeout: ASYNC_QUERY_TIMEOUT_MS })
 
 const initialUiPreferences = useUiPreferences.getState()
 

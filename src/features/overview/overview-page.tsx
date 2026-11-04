@@ -7,6 +7,7 @@ import {
 } from './overview-period'
 import { metricsOverviewQuery } from './overview-queries'
 import { KpiGrid } from './kpi-grid'
+import { RevenueChart } from './revenue-chart'
 
 const DEFAULT_PERIOD: OverviewPeriod = 'this-month'
 
@@ -32,6 +33,7 @@ export function OverviewPage() {
           comparison={comparisonLabel(period)}
         />
       )}
+      {current.data && <RevenueChart points={current.data.revenueByMonth} />}
     </div>
   )
 }
