@@ -1,3 +1,4 @@
+import { describeError } from '../../../api/error-messages'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { CircleAlert, RotateCw, Sparkles } from 'lucide-react'
 import type { CustomerSummary } from '../../../api/contract'
@@ -55,11 +56,11 @@ function Failure({ error, onRetry }: { error: Error; onRetry: () => void }) {
           strokeWidth={1.75}
           className="text-danger mt-0.5 shrink-0"
         />
-        <span>
+        <span className="min-w-0 [overflow-wrap:anywhere]">
           <span className="font-medium">
             The summary could not be generated.
           </span>{' '}
-          <span className="text-fg-muted">{error.message}</span>
+          <span className="text-fg-muted">{describeError(error).detail}</span>
         </span>
       </p>
       <Button onPress={onRetry}>

@@ -21,7 +21,7 @@ export function QueryError({ title, error, onRetry }: QueryErrorProps) {
           strokeWidth={1.75}
           className="text-danger mt-px shrink-0"
         />
-        <div className="flex flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5 [overflow-wrap:anywhere]">
           <h2 className="font-semibold">{title}</h2>
           <p className="text-fg-muted">{describeError(error).detail}</p>
         </div>

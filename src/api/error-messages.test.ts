@@ -29,6 +29,19 @@ describe('describeError', () => {
     ).toBe('Can’t reach the API')
   })
 
+  it('explains an endpoint the connected API does not have', () => {
+    expect(
+      describeError(apiError(404, 'Cannot GET /customers/cus_1/summary')),
+    ).toEqual({
+      title: 'Not available yet',
+      detail: 'The connected payments API does not offer this yet.',
+    })
+    expect(describeError(apiError(404, 'Customer cus_1 not found'))).toEqual({
+      title: 'Action failed',
+      detail: 'Customer cus_1 not found',
+    })
+  })
+
   it('lists validation messages', () => {
     expect(describeError(validationError)).toEqual({
       title: 'Some fields need attention',

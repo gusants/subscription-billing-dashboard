@@ -2,10 +2,12 @@ import { z } from 'zod'
 import { ApiError, NETWORK_ERROR_STATUS } from './client'
 
 const HTTP_BAD_REQUEST = 400
+const HTTP_NOT_FOUND = 404
 const HTTP_CONFLICT = 409
 const HTTP_UNPROCESSABLE = 422
 const FIRST_SERVER_ERROR_STATUS = 500
 const IDEMPOTENCY_KEY_MARKER = 'Idempotency-Key'
+const MISSING_ROUTE_MESSAGE = /^Cannot (GET|POST|PUT|PATCH|DELETE) \//
 
 const validationIssueSchema = z.object({
   path: z.array(z.union([z.string(), z.number()])),
@@ -23,6 +25,12 @@ function validationIssues(error: ApiError): ValidationIssue[] {
   })
 }
 
+function isMissingRoute(error: ApiError) {
+  return (
+    error.status === HTTP_NOT_FOUND && MISSING_ROUTE_MESSAGE.test(error.message)
+  )
+}
+
 function isIdempotencyError(error: ApiError) {
   return error.message.includes(IDEMPOTENCY_KEY_MARKER)
 }
@@ -32,6 +40,11 @@ function describeApiError(error: ApiError): ErrorDescription {
     return {
       title: 'Can’t reach the API',
       detail: 'Check that the payments API is running, then try again.',
+    }
+  if (isMissingRoute(error))
+    return {
+      title: 'Not available yet',
+      detail: 'The connected payments API does not offer this yet.',
     }
   if (error.status === HTTP_BAD_REQUEST) {
     const messages = validationIssues(error).map((issue) => issue.message)
