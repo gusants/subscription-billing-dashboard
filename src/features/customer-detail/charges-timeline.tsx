@@ -11,12 +11,20 @@ import { useOptimisticRetry } from './use-optimistic-retry'
 const PLACEHOLDER_CHARGES = 4
 const NO_CHARGES: never[] = []
 
-export function ChargesTimeline({ customerId }: { customerId: string }) {
+export function useChargesTimeline(customerId: string) {
   const query = useInfiniteQuery(customerChargesQuery(customerId))
   const loadedCharges =
     query.data?.pages.flatMap((page) => page.data) ?? NO_CHARGES
-  const { charges, retryCharge } = useOptimisticRetry(customerId, loadedCharges)
+  return { query, ...useOptimisticRetry(customerId, loadedCharges) }
+}
 
+type ChargesTimelineProps = {
+  timeline: ReturnType<typeof useChargesTimeline>
+}
+
+export function ChargesTimeline({
+  timeline: { query, charges, retryCharge },
+}: ChargesTimelineProps) {
   if (query.isPending) {
     return (
       <div

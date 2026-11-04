@@ -91,4 +91,25 @@ describe('optimistic retry', () => {
         ?.attemptCount,
     ).toBe(failed.attemptCount)
   })
+
+  it('offers the latest failed card charge as the page primary action', async () => {
+    server.use(
+      http.post(`${apiBaseUrl}/charges/:id/retry`, async () => {
+        await delay(300)
+      }),
+    )
+    const { customerId } = failedChargeCustomer()
+    const { user } = renderApp(`/customers/${customerId}`)
+    const table = await screen.findByRole('table', { name: 'Charges' })
+    const header = screen.getByRole('heading', { level: 1 }).closest('header')!
+    const primary = await within(header).findByRole('button', {
+      name: /Retry charge due/,
+    })
+
+    expect(primary).toHaveTextContent('Retry charge')
+    await user.click(primary)
+
+    expect(within(table).getByText('Retrying')).toBeInTheDocument()
+    expect(await screen.findByText('Retry declined')).toBeInTheDocument()
+  })
 })

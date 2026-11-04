@@ -4,8 +4,10 @@ import { ChevronRight } from 'lucide-react'
 import { formatDate } from '../../lib/format-date'
 import { allPlansQuery } from '../plans/plans-queries'
 import { AiSummaryCard } from './ai-summary/ai-summary-card'
-import { ChargesTimeline } from './charges-timeline'
+import { ChargesTimeline, useChargesTimeline } from './charges-timeline'
 import { NewSubscriptionDialog } from './new-subscription-dialog'
+import { RetryButton } from './retry-button'
+import { canRetry } from './use-optimistic-retry'
 import {
   customerDetailQuery,
   primarySubscription,
@@ -20,6 +22,8 @@ export function CustomerDetailPage() {
   const { data: customer } = useSuspenseQuery(customerDetailQuery(customerId))
   const { data: plans } = useQuery(allPlansQuery())
   const primary = primarySubscription(customer.subscriptions)
+  const timeline = useChargesTimeline(customer.id)
+  const latestRetryable = timeline.charges.find(canRetry)
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,7 +52,16 @@ export function CustomerDetailPage() {
             {customer.email} · Customer since {formatDate(customer.createdAt)}
           </p>
         </div>
-        <NewSubscriptionDialog customerId={customer.id} />
+        <div className="flex flex-wrap gap-2">
+          <NewSubscriptionDialog customerId={customer.id} />
+          {latestRetryable && (
+            <RetryButton
+              charge={latestRetryable}
+              onRetry={timeline.retryCharge}
+              prominence="primary"
+            />
+          )}
+        </div>
       </header>
 
       {primary ? (
@@ -71,7 +84,7 @@ export function CustomerDetailPage() {
           <h2 id="charges-heading" className="font-semibold">
             Charges
           </h2>
-          <ChargesTimeline customerId={customer.id} />
+          <ChargesTimeline timeline={timeline} />
         </section>
         <aside className="flex flex-col gap-6">
           <AiSummaryCard customerId={customer.id} />
