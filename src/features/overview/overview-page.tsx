@@ -40,7 +40,7 @@ export function OverviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <header className="flex flex-col justify-between gap-4 @xl:flex-row @xl:items-end">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
           <p className="text-fg-muted">
@@ -71,7 +71,7 @@ export function OverviewPage() {
         }
       </WidgetState>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 @4xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <WidgetState
           query={current}
           title="Revenue by month"

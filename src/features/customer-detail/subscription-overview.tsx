@@ -38,7 +38,7 @@ export function SubscriptionOverview({
 
   return (
     <section aria-label="Subscription overview">
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
         <StatCard label="Status">
           <StatusBadge {...subscriptionStatusLabel(subscription.status)} />
         </StatCard>

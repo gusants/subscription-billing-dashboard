@@ -213,9 +213,9 @@ A cool, nearly colourless slate system with one indigo voice and three meaning-b
 
 An app shell with a 240px sticky sidebar (15rem) and a fluid main column capped at 1440px (90rem), centred. Main padding is 16px on mobile, 24px from 640px, and 40px horizontally with 32px vertically from 1024px. Page blocks stack with 24px gaps; inside cards, 8-16px gaps. The optional simulator panel docks to the right at 320px on desktop and overlays the content below 1024px.
 
-Below 1024px the sidebar becomes a top bar: wordmark and theme switcher on one row, then a horizontally scrolling nav row (icons hidden under 640px). Customer detail runs a two-column grid (fluid main, 320px aside) from 1024px; on narrow screens the aside comes first and charges follow. Tables become stacked lists on small screens rather than scrolling sideways. Overview places KPI cards in a responsive grid above chart cards.
+Below 1024px the sidebar becomes a top bar: wordmark and theme switcher on one row, then a horizontally scrolling nav row (icons hidden under 640px), and the simulator opens as a modal sheet instead of docking. Page layouts respond to the width left for content, not to the viewport: `<main>` is a size container, so docking the simulator reflows the page exactly as a narrower window would. Customer detail runs a two-column grid (fluid main, 320px aside) and a four-up stat row once content reaches 672px (`@2xl`); below that the aside comes first and charges follow. Tables become stacked lists below 672px of content rather than scrolling sideways. Overview places KPI cards two-up from 576px (`@xl`) and four-up, with charts side by side, from 896px (`@4xl`).
 
-Breakpoints are Tailwind defaults: 640px (sm), 1024px (lg).
+Viewport breakpoints (Tailwind defaults 640px `sm`, 1024px `lg`) drive only the app shell; content uses the container breakpoints above.
 
 ## Elevation & Depth
 

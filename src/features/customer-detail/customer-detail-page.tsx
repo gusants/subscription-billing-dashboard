@@ -39,7 +39,7 @@ export function CustomerDetailPage() {
         </ol>
       </nav>
 
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <header className="flex flex-col justify-between gap-4 @xl:flex-row @xl:items-end">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold tracking-tight">
             {customer.name}
@@ -63,10 +63,10 @@ export function CustomerDetailPage() {
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_20rem]">
         <section
           aria-labelledby="charges-heading"
-          className="order-last flex flex-col gap-3 lg:order-none"
+          className="order-last flex flex-col gap-3 @2xl:order-none"
         >
           <h2 id="charges-heading" className="font-semibold">
             Charges

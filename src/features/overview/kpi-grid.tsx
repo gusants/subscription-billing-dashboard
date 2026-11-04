@@ -16,7 +16,7 @@ export function KpiGrid({ current, previous, comparison }: KpiGridProps) {
 
   return (
     <section aria-label="Key metrics">
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <dl className="grid grid-cols-1 gap-3 @xl:grid-cols-2 @4xl:grid-cols-4">
         <KpiCard
           label="Monthly recurring revenue"
           value={formatCurrency(current.mrrCents)}

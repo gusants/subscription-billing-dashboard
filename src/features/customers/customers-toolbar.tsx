@@ -46,8 +46,8 @@ export function CustomersToolbar({
   )
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <div className="sm:w-80">
+    <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center">
+      <div className="@xl:w-80">
         <SearchField
           label="Search customers"
           placeholder="Search by name or email"

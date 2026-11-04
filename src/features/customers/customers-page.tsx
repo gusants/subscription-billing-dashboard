@@ -27,7 +27,7 @@ export function CustomersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <header className="flex flex-col justify-between gap-4 @xl:flex-row @xl:items-end">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold tracking-tight">Customers</h1>
           <p className="text-fg-muted">
@@ -99,10 +99,10 @@ function CustomersResults({
       aria-busy={isStale}
       className={`flex flex-col gap-4 transition-opacity ${isStale ? 'opacity-60' : ''}`}
     >
-      <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border md:block">
+      <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border @2xl:block">
         <CustomersTable customers={list.data} />
       </div>
-      <div className="md:hidden">
+      <div className="@2xl:hidden">
         <CustomersStackedList customers={list.data} />
       </div>
       <Pagination
