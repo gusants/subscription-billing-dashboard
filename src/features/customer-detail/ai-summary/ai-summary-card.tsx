@@ -10,6 +10,7 @@ import { customerSummaryQuery } from '../customer-detail-queries'
 import { SourceCue } from './source-cue'
 import { behaviorLabel, riskLabel } from './summary-labels'
 import { SummaryMetrics } from './summary-metrics'
+import { useIsInvalidated } from './use-is-invalidated'
 
 function useChargeCount(customerId: string) {
   const charges = useInfiniteQuery(customerChargesQuery(customerId))
@@ -118,7 +119,9 @@ function Ready({ summary, generatedAt, isOutdated, onRegenerate }: ReadyProps) {
 }
 
 export function AiSummaryCard({ customerId }: { customerId: string }) {
-  const summary = useQuery(customerSummaryQuery(customerId))
+  const summaryQuery = customerSummaryQuery(customerId)
+  const summary = useQuery(summaryQuery)
+  const isOutdated = useIsInvalidated(summaryQuery.queryKey)
   const chargeCount = useChargeCount(customerId)
   const generate = () => void summary.refetch()
   const announcement =
@@ -155,7 +158,7 @@ export function AiSummaryCard({ customerId }: { customerId: string }) {
         <Ready
           summary={summary.data}
           generatedAt={summary.dataUpdatedAt}
-          isOutdated={summary.isStale}
+          isOutdated={isOutdated}
           onRegenerate={generate}
         />
       ) : (
