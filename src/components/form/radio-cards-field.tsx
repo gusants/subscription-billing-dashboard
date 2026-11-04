@@ -30,7 +30,7 @@ export function RadioCardsField({ label, options }: RadioCardsFieldProps) {
       className="flex flex-col gap-1.5"
     >
       <Label className="font-medium">{label}</Label>
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
         {options.map((option) => (
           <Radio
             key={option.id}
