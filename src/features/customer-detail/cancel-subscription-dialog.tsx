@@ -40,7 +40,7 @@ export function CancelSubscriptionDialog({
       <Button
         variant="danger"
         onPress={() => setOpen(true)}
-        className="h-8 px-2.5"
+        className="h-8 self-start px-2.5 whitespace-nowrap"
       >
         Cancel subscription
       </Button>

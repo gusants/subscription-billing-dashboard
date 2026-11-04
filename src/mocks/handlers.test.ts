@@ -1,3 +1,4 @@
+import { demoFlags } from './demo-flags'
 import { ApiError, request } from '../api/client'
 import {
   chargesApi,
@@ -174,7 +175,7 @@ describe('demo handlers', () => {
   })
 
   it('fails every request while API errors are simulated', async () => {
-    demoDbStore.getState().setFailingRequests(true)
+    demoFlags.getState().setFailingRequests(true)
 
     await expectApiError(customersApi.list(), 503)
   })

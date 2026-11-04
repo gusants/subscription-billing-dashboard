@@ -1,3 +1,4 @@
+import { demoFlags } from '../mocks/demo-flags'
 import '@testing-library/jest-dom/vitest'
 import { configure } from '@testing-library/react'
 import { useUiPreferences } from '../lib/ui-preferences'
@@ -17,7 +18,7 @@ beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => {
   server.resetHandlers()
   demoDbStore.getState().reset()
-  demoDbStore.getState().setFailingRequests(false)
+  demoFlags.getState().setFailingRequests(false)
   localStorage.clear()
   useUiPreferences.setState(initialUiPreferences, true)
   delete document.documentElement.dataset.theme

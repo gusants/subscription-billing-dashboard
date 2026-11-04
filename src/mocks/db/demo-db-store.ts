@@ -8,8 +8,6 @@ export const DEMO_DB_VERSION = 1
 
 type DemoDbState = {
   db: DemoDatabase
-  isFailingRequests: boolean
-  setFailingRequests: (isFailing: boolean) => void
   transact: <T>(change: (draft: DemoDatabase) => T) => T
   read: <T>(query: (db: DemoDatabase) => T) => T
   reset: () => void
@@ -23,8 +21,6 @@ export const demoDbStore = createStore<DemoDbState>()(
   persist(
     (set, get) => ({
       db: freshDatabase(),
-      isFailingRequests: false,
-      setFailingRequests: (isFailingRequests) => set({ isFailingRequests }),
       transact: (change) => {
         const draft = structuredClone(get().db)
         const result = change(draft)

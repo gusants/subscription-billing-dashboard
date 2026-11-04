@@ -33,39 +33,36 @@ export function SubscriptionsPanel({
         {subscriptions.map((subscription) => {
           const plan = plans?.get(subscription.planId)
           return (
-            <li
-              key={subscription.id}
-              className="flex items-start justify-between gap-3 px-4 py-3"
-            >
-              <div className="flex min-w-0 flex-col">
-                <span className="font-medium">
-                  {plan?.name ?? 'Plan'}
-                  {subscription.id === primaryId && (
-                    <span className="sr-only"> (shown above)</span>
-                  )}
-                </span>
-                {plan && (
-                  <span className="text-fg-muted tabular-nums">
-                    {formatPlanPrice(plan)}
+            <li key={subscription.id} className="flex flex-col gap-3 px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-col">
+                  <span className="font-medium">
+                    {plan?.name ?? 'Plan'}
+                    {subscription.id === primaryId && (
+                      <span className="sr-only"> (shown above)</span>
+                    )}
                   </span>
-                )}
-                <span className="text-fg-muted whitespace-nowrap tabular-nums">
-                  {subscription.status === 'canceled' ? 'Ended' : 'Renews'}{' '}
-                  {formatDate(subscription.currentPeriodEnd)}
-                </span>
-              </div>
-              <div className="flex flex-col items-end gap-3">
+                  {plan && (
+                    <span className="text-fg-muted tabular-nums">
+                      {formatPlanPrice(plan)}
+                    </span>
+                  )}
+                  <span className="text-fg-muted whitespace-nowrap tabular-nums">
+                    {subscription.status === 'canceled' ? 'Ended' : 'Renews'}{' '}
+                    {formatDate(subscription.currentPeriodEnd)}
+                  </span>
+                </div>
                 <StatusBadge
                   {...subscriptionStatusLabel(subscription.status)}
                 />
-                {subscription.status !== 'canceled' && (
-                  <CancelSubscriptionDialog
-                    customerId={customerId}
-                    subscriptionId={subscription.id}
-                    planName={plan?.name ?? 'this'}
-                  />
-                )}
               </div>
+              {subscription.status !== 'canceled' && (
+                <CancelSubscriptionDialog
+                  customerId={customerId}
+                  subscriptionId={subscription.id}
+                  planName={plan?.name ?? 'this'}
+                />
+              )}
             </li>
           )
         })}

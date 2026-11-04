@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useUiPreferences } from '../../lib/ui-preferences'
 import { Sidebar } from './sidebar'
-import { SimulatorPanel } from './simulator-panel'
+import { SimulatorPanel } from '../../features/simulator/simulator-panel'
 import { useDocumentTheme } from './use-document-theme'
 
 export function AppShell({ children }: { children: ReactNode }) {

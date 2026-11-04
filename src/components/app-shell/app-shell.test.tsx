@@ -71,9 +71,10 @@ describe('AppShell', () => {
     })
     await user.click(simulatorToggle!)
 
-    const panel = screen.getByRole('complementary', { name: 'Simulator' })
+    const panel = screen.getByRole('complementary', { name: /Simulator/ })
+    const approvePix = within(panel).getByRole('form', { name: 'Approve Pix' })
     expect(
-      within(panel).getByRole('button', { name: /Approve Pix/ }),
+      within(approvePix).getByRole('button', { name: 'Approve' }),
     ).toBeDisabled()
 
     await user.click(
@@ -81,7 +82,7 @@ describe('AppShell', () => {
     )
 
     expect(
-      screen.queryByRole('complementary', { name: 'Simulator' }),
+      screen.queryByRole('complementary', { name: /Simulator/ }),
     ).not.toBeInTheDocument()
   })
 })

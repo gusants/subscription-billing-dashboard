@@ -53,13 +53,13 @@ export function ChargesTimeline({ customerId }: { customerId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border xl:block">
+    <div className="@container flex flex-col gap-3">
+      <div className="border-border bg-surface hidden overflow-x-auto rounded-lg border @3xl:block">
         <ChargesTable charges={charges} onRetry={retryCharge} />
       </div>
       <ol
         aria-label="Charges list"
-        className="divide-border border-border bg-surface divide-y rounded-lg border xl:hidden"
+        className="divide-border border-border bg-surface divide-y rounded-lg border @3xl:hidden"
       >
         {charges.map((charge) => (
           <ChargeItem key={charge.id} charge={charge} onRetry={retryCharge} />

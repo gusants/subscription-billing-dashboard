@@ -1,7 +1,7 @@
 import { delay, HttpResponse } from 'msw'
 import { z } from 'zod'
 import { DemoApiError } from './db/demo-api-error'
-import { demoDbStore } from './db/demo-db-store'
+import { demoFlags } from './demo-flags'
 
 const MIN_LATENCY_MS = 300
 const MAX_LATENCY_MS = 700
@@ -42,7 +42,7 @@ export function route(
 ) {
   return async (context: RouteContext) => {
     await simulatedLatency()
-    if (demoDbStore.getState().isFailingRequests) {
+    if (demoFlags.getState().isFailingRequests) {
       return errorResponse(
         503,
         'Simulated API error. Turn it off in the simulator.',
