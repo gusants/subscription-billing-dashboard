@@ -4,6 +4,7 @@ import {
   Outlet,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
+import { AppShell } from '../components/app-shell/app-shell'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -16,24 +17,25 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   return (
-    <>
-      <nav aria-label="Main">
-        <Link to="/">Overview</Link>
-        <Link to="/customers">Customers</Link>
-        <Link to="/plans">Plans</Link>
-      </nav>
-      <main>
-        <Outlet />
-      </main>
-    </>
+    <AppShell>
+      <Outlet />
+    </AppShell>
   )
 }
 
 function NotFound() {
   return (
-    <section>
-      <h1>Page not found</h1>
-      <Link to="/">Back to overview</Link>
+    <section className="flex flex-col items-start gap-2 py-16">
+      <h1 className="text-xl font-semibold tracking-tight">Page not found</h1>
+      <p className="text-fg-muted">
+        This address does not match any page in Cadência Billing.
+      </p>
+      <Link
+        to="/"
+        className="text-accent hover:text-accent-hover mt-2 font-medium underline"
+      >
+        Back to overview
+      </Link>
     </section>
   )
 }

@@ -6,5 +6,9 @@ export const Route = createFileRoute('/customers/$customerId')({
 
 function CustomerDetailPage() {
   const { customerId } = Route.useParams()
-  return <h1>Customer {customerId}</h1>
+  return (
+    <h1 className="text-xl font-semibold tracking-tight">
+      Customer {customerId}
+    </h1>
+  )
 }

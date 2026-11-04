@@ -5,5 +5,5 @@ export const Route = createFileRoute('/customers/')({
 })
 
 function CustomersPage() {
-  return <h1>Customers</h1>
+  return <h1 className="text-xl font-semibold tracking-tight">Customers</h1>
 }

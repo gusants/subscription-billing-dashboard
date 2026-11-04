@@ -5,5 +5,5 @@ export const Route = createFileRoute('/plans')({
 })
 
 function PlansPage() {
-  return <h1>Plans</h1>
+  return <h1 className="text-xl font-semibold tracking-tight">Plans</h1>
 }
