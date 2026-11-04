@@ -1,16 +1,10 @@
+import createClient from 'openapi-fetch'
 import { apiBaseUrl } from '../lib/env'
 import type { ApiErrorBody } from './contract'
+import type { paths } from './generated/schema'
+import type { PendingPaths } from './pending-paths'
 
-type QueryValue = string | number | boolean | undefined
-
-type RequestOptions = {
-  method?: 'GET' | 'POST'
-  query?: Record<string, QueryValue>
-  body?: unknown
-  headers?: Record<string, string>
-}
-
-const NO_CONTENT = 204
+export type ApiPaths = paths & PendingPaths
 
 export class ApiError extends Error {
   readonly status: number
@@ -24,39 +18,40 @@ export class ApiError extends Error {
   }
 }
 
-function buildUrl(path: string, query: RequestOptions['query']) {
-  const url = new URL(`${apiBaseUrl}${path}`, window.location.origin)
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (value !== undefined && value !== '')
-      url.searchParams.set(key, String(value))
+function serializeQuery(query: Record<string, unknown>) {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== '')
+      search.set(key, String(value as string | number | boolean))
   }
-  return url
+  return search.toString()
 }
 
-async function readErrorBody(response: Response) {
-  try {
-    return (await response.json()) as ApiErrorBody
-  } catch {
-    return undefined
-  }
+function isErrorBody(value: unknown): value is ApiErrorBody {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { message?: unknown }).message === 'string'
+  )
 }
 
-export async function request<T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<T> {
-  const hasBody = options.body !== undefined
-  const response = await fetch(buildUrl(path, options.query), {
-    method: options.method ?? 'GET',
-    headers: {
-      ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
-      ...options.headers,
-    },
-    body: hasBody ? JSON.stringify(options.body) : undefined,
-  })
+export const api = createClient<ApiPaths>({
+  baseUrl: new URL(apiBaseUrl, window.location.origin).href.replace(/\/$/, ''),
+  fetch: (request) => globalThis.fetch(request),
+  querySerializer: serializeQuery,
+})
 
+type ClientResult<Data> = {
+  data?: Data
+  error?: unknown
+  response: Response
+}
+
+export async function unwrap<Data>(
+  pending: Promise<ClientResult<Data>>,
+): Promise<Data> {
+  const { data, error, response } = await pending
   if (!response.ok)
-    throw new ApiError(response.status, await readErrorBody(response))
-  if (response.status === NO_CONTENT) return undefined as T
-  return (await response.json()) as T
+    throw new ApiError(response.status, isErrorBody(error) ? error : undefined)
+  return data as Data
 }

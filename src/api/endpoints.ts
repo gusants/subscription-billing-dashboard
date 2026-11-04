@@ -1,82 +1,73 @@
-import { request } from './client'
+import { api, unwrap } from './client'
 import type {
   CardToken,
-  ChargeHistory,
   ChargeHistoryParams,
-  ChargeRetryResult,
   CreateCustomerInput,
   CreatePlanInput,
   CreateSubscriptionInput,
-  CreatedSubscription,
-  Customer,
-  CustomerDetail,
-  CustomerList,
   CustomerListParams,
-  CustomerSummary,
-  MetricsOverview,
   MetricsOverviewParams,
-  Plan,
-  PlanList,
   PlanListParams,
-  RetriesRunResult,
-  Subscription,
 } from './contract'
+
+const byId = (id: string) => ({ params: { path: { id } } })
 
 export const customersApi = {
   list: (params: CustomerListParams = {}) =>
-    request<CustomerList>('/customers', { query: params }),
-  get: (id: string) => request<CustomerDetail>(`/customers/${id}`),
+    unwrap(api.GET('/customers', { params: { query: params } })),
+  get: (id: string) => unwrap(api.GET('/customers/{id}', byId(id))),
   create: (input: CreateCustomerInput) =>
-    request<Customer>('/customers', { method: 'POST', body: input }),
+    unwrap(api.POST('/customers', { body: input })),
   charges: (id: string, params: ChargeHistoryParams = {}) =>
-    request<ChargeHistory>(`/customers/${id}/charges`, { query: params }),
-  summary: (id: string) => request<CustomerSummary>(`/customers/${id}/summary`),
+    unwrap(
+      api.GET('/customers/{id}/charges', {
+        params: { path: { id }, query: params },
+      }),
+    ),
+  summary: (id: string) => unwrap(api.GET('/customers/{id}/summary', byId(id))),
 }
 
 export const plansApi = {
   list: (params: PlanListParams = {}) =>
-    request<PlanList>('/plans', { query: params }),
+    unwrap(api.GET('/plans', { params: { query: params } })),
   create: (input: CreatePlanInput) =>
-    request<Plan>('/plans', { method: 'POST', body: input }),
+    unwrap(api.POST('/plans', { body: input })),
 }
 
 export const subscriptionsApi = {
-  get: (id: string) => request<Subscription>(`/subscriptions/${id}`),
+  get: (id: string) => unwrap(api.GET('/subscriptions/{id}', byId(id))),
   create: (input: CreateSubscriptionInput, idempotencyKey?: string) =>
-    request<CreatedSubscription>('/subscriptions', {
-      method: 'POST',
-      body: input,
-      headers: idempotencyKey
-        ? { 'Idempotency-Key': idempotencyKey }
-        : undefined,
-    }),
+    unwrap(
+      api.POST('/subscriptions', {
+        body: input,
+        params: { header: { 'Idempotency-Key': idempotencyKey } },
+      }),
+    ),
   cancel: (id: string) =>
-    request<Subscription>(`/subscriptions/${id}/cancel`, { method: 'POST' }),
+    unwrap(api.POST('/subscriptions/{id}/cancel', byId(id))),
 }
 
 export const chargesApi = {
-  retry: (id: string) =>
-    request<ChargeRetryResult>(`/charges/${id}/retry`, { method: 'POST' }),
+  retry: (id: string) => unwrap(api.POST('/charges/{id}/retry', byId(id))),
 }
 
 export const metricsApi = {
   overview: (params: MetricsOverviewParams = {}) =>
-    request<MetricsOverview>('/metrics/overview', { query: params }),
+    unwrap(api.GET('/metrics/overview', { params: { query: params } })),
 }
 
 export const simulatorApi = {
   payCharge: (chargeId: string) =>
-    request<void>(`/fake-gateway/charges/${chargeId}/pay`, { method: 'POST' }),
+    unwrap(api.POST('/fake-gateway/charges/{id}/pay', byId(chargeId))),
   expireCharge: (chargeId: string) =>
-    request<void>(`/fake-gateway/charges/${chargeId}/expire`, {
-      method: 'POST',
-    }),
+    unwrap(api.POST('/fake-gateway/charges/{id}/expire', byId(chargeId))),
   setSubscriptionCard: (subscriptionId: string, cardToken: CardToken) =>
-    request<void>(`/fake-gateway/subscriptions/${subscriptionId}/card`, {
-      method: 'POST',
-      body: { cardToken },
-    }),
-  runRetriesNow: () =>
-    request<RetriesRunResult>('/dev/retries/run-now', { method: 'POST' }),
-  reset: () => request<void>('/fake-gateway/reset', { method: 'POST' }),
+    unwrap(
+      api.POST('/fake-gateway/subscriptions/{id}/card', {
+        ...byId(subscriptionId),
+        body: { cardToken },
+      }),
+    ),
+  runRetriesNow: () => unwrap(api.POST('/dev/retries/run-now')),
+  reset: () => unwrap(api.POST('/fake-gateway/reset')),
 }

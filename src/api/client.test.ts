@@ -1,9 +1,9 @@
 import { http, HttpResponse } from 'msw'
 import { apiBaseUrl } from '../lib/env'
 import { server } from '../mocks/node'
-import { ApiError, request } from './client'
+import { api, ApiError, unwrap } from './client'
 
-describe('request', () => {
+describe('api client', () => {
   it('sends defined query params and returns the JSON body', async () => {
     let receivedUrl: URL | undefined
     server.use(
@@ -13,9 +13,13 @@ describe('request', () => {
       }),
     )
 
-    const body = await request('/customers', {
-      query: { page: 2, search: '', subscriptionStatus: undefined },
-    })
+    const body = await unwrap(
+      api.GET('/customers', {
+        params: {
+          query: { page: 2, search: '', subscriptionStatus: undefined },
+        },
+      }),
+    )
 
     expect(body).toEqual({ data: [] })
     expect(receivedUrl?.searchParams.get('page')).toBe('2')
@@ -30,10 +34,11 @@ describe('request', () => {
       ),
     )
 
-    const body = await request('/plans', {
-      method: 'POST',
-      body: { name: 'Studio', amountCents: 38990, interval: 'monthly' },
-    })
+    const body = await unwrap(
+      api.POST('/plans', {
+        body: { name: 'Studio', amountCents: 38990, interval: 'monthly' },
+      }),
+    )
 
     expect(body).toEqual({
       name: 'Studio',
@@ -51,7 +56,7 @@ describe('request', () => {
     )
 
     await expect(
-      request('/fake-gateway/reset', { method: 'POST' }),
+      unwrap(api.POST('/fake-gateway/reset')),
     ).resolves.toBeUndefined()
   })
 
@@ -69,7 +74,9 @@ describe('request', () => {
       ),
     )
 
-    const failure = request('/customers/missing')
+    const failure = unwrap(
+      api.GET('/customers/{id}', { params: { path: { id: 'missing' } } }),
+    )
 
     await expect(failure).rejects.toBeInstanceOf(ApiError)
     await expect(failure).rejects.toMatchObject({
@@ -86,7 +93,7 @@ describe('request', () => {
       ),
     )
 
-    await expect(request('/health')).rejects.toMatchObject({
+    await expect(unwrap(api.GET('/health'))).rejects.toMatchObject({
       status: 502,
       message: 'Request failed with status 502',
     })

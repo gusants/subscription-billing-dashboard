@@ -1,5 +1,5 @@
 import { demoFlags } from './demo-flags'
-import { ApiError, request } from '../api/client'
+import { api, ApiError, unwrap } from '../api/client'
 import {
   chargesApi,
   customersApi,
@@ -31,7 +31,7 @@ async function expectApiError(promise: Promise<unknown>, status: number) {
 
 describe('demo handlers', () => {
   it('answers the health check without a backend', async () => {
-    await expect(request('/health')).resolves.toEqual({ status: 'ok' })
+    await expect(unwrap(api.GET('/health'))).resolves.toEqual({ status: 'ok' })
   })
 
   it('lists, searches and paginates customers', async () => {
