@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { apiBaseUrl } from '../lib/env'
 import { server } from '../mocks/node'
-import { api, ApiError, unwrap } from './client'
+import { api, ApiError, NETWORK_ERROR_STATUS, unwrap } from './client'
 
 describe('api client', () => {
   it('sends defined query params and returns the JSON body', async () => {
@@ -96,6 +96,15 @@ describe('api client', () => {
     await expect(unwrap(api.GET('/health'))).rejects.toMatchObject({
       status: 502,
       message: 'Request failed with status 502',
+    })
+  })
+
+  it('reports an unreachable API as a network error', async () => {
+    server.use(http.get(`${apiBaseUrl}/health`, () => HttpResponse.error()))
+
+    await expect(unwrap(api.GET('/health'))).rejects.toMatchObject({
+      status: NETWORK_ERROR_STATUS,
+      message: 'The API could not be reached',
     })
   })
 })

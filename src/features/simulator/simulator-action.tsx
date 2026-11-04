@@ -1,3 +1,4 @@
+import { describeError } from '../../api/error-messages'
 import { useActionState, type ReactNode } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Button } from '../../components/ui/button'
@@ -40,7 +41,7 @@ function SubmitAction({
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong'
+  return describeError(error).detail
 }
 
 export function SimulatorAction({

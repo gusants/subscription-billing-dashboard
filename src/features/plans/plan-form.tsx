@@ -1,3 +1,4 @@
+import { showServerFieldErrors } from '../../components/form/server-field-errors'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { plansApi } from '../../api/endpoints'
@@ -38,6 +39,7 @@ export function PlanForm() {
   const queryClient = useQueryClient()
   const createPlan = useMutation({
     mutationFn: plansApi.create,
+    meta: { showsFieldErrors: true },
     onSuccess: async (plan) => {
       await invalidateAfter(queryClient, { type: 'plan-created' })
       notify.success(
@@ -52,11 +54,16 @@ export function PlanForm() {
     validators: { onBlur: planFormSchema, onSubmit: planFormSchema },
     onSubmit: async ({ value, formApi }) => {
       const parsed = planFormSchema.parse(value)
-      await createPlan.mutateAsync({
-        name: parsed.name,
-        amountCents: parseMoneyToCents(parsed.price),
-        interval: parsed.interval,
-      })
+      await createPlan
+        .mutateAsync({
+          name: parsed.name,
+          amountCents: parseMoneyToCents(parsed.price),
+          interval: parsed.interval,
+        })
+        .catch((error: unknown) => {
+          showServerFieldErrors(formApi, error, { amountCents: 'price' })
+          throw error
+        })
       formApi.reset()
     },
   })

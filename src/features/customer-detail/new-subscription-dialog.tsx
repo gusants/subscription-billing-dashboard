@@ -1,3 +1,4 @@
+import { showServerFieldErrors } from '../../components/form/server-field-errors'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
@@ -81,6 +82,7 @@ export function NewSubscriptionDialog({ customerId }: { customerId: string }) {
   const createSubscription = useMutation({
     mutationFn: (input: CreateSubscriptionInput) =>
       subscriptionsApi.create(input, idempotency.keyFor(input)),
+    meta: { showsFieldErrors: true },
     onSuccess: async (subscription) => {
       idempotency.rotate()
       await invalidateAfter(queryClient, {
@@ -111,7 +113,12 @@ export function NewSubscriptionDialog({ customerId }: { customerId: string }) {
       onSubmit: subscriptionFormSchema,
     },
     onSubmit: async ({ value, formApi }) => {
-      await createSubscription.mutateAsync(toInput(customerId, value))
+      await createSubscription
+        .mutateAsync(toInput(customerId, value))
+        .catch((error: unknown) => {
+          showServerFieldErrors(formApi, error)
+          throw error
+        })
       formApi.reset()
       setOpen(false)
     },

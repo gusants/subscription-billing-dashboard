@@ -84,7 +84,7 @@ describe('new subscription dialog', () => {
     await user.click(
       within(dialog).getByRole('button', { name: 'Create subscription' }),
     )
-    expect(await screen.findByText('Action failed')).toBeInTheDocument()
+    expect(await screen.findByText('Can’t reach the API')).toBeInTheDocument()
 
     await user.click(
       within(dialog).getByRole('button', { name: 'Create subscription' }),

@@ -18,7 +18,7 @@ export async function withIdempotency<Body>(
   if (stored && stored.requestBody !== requestBody) {
     throw new DemoApiError(
       422,
-      'Idempotency-Key was already used with a different request body',
+      'Idempotency-Key was already used with a different request',
     )
   }
   if (stored)

@@ -1,3 +1,4 @@
+import { describeError } from '../../api/error-messages'
 import { CircleAlert, RotateCw } from 'lucide-react'
 import { Button } from '../ui/button'
 
@@ -22,7 +23,7 @@ export function QueryError({ title, error, onRetry }: QueryErrorProps) {
         />
         <div className="flex flex-col gap-0.5">
           <h2 className="font-semibold">{title}</h2>
-          <p className="text-fg-muted">{error.message}</p>
+          <p className="text-fg-muted">{describeError(error).detail}</p>
         </div>
       </div>
       <Button onPress={onRetry}>

@@ -75,7 +75,11 @@ export function route<Info, Body extends JsonBodyType = null>(
         return errorResponse(
           400,
           'Validation failed',
-          error.issues.map((issue) => issue.message),
+          error.issues.map(({ code, path, message }) => ({
+            code,
+            path,
+            message,
+          })),
         )
       }
       throw error

@@ -1,4 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
+import { http, HttpResponse } from 'msw'
+import { apiBaseUrl } from '../../lib/env'
+import { server } from '../../mocks/node'
 import { renderApp } from '../../test/render-app'
 
 describe('new customer dialog', () => {
@@ -76,5 +79,54 @@ describe('new customer dialog', () => {
     expect(
       within(dialog).getByText('Enter a valid billing email'),
     ).toBeInTheDocument()
+  })
+
+  it('puts API validation errors on the matching field instead of a toast', async () => {
+    server.use(
+      http.post(`${apiBaseUrl}/customers`, () =>
+        HttpResponse.json(
+          {
+            statusCode: 400,
+            error: 'Bad Request',
+            message: 'Validation failed',
+            details: [
+              {
+                code: 'custom',
+                path: ['email'],
+                message: 'This domain does not receive email',
+              },
+            ],
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    const { user } = renderApp('/customers')
+    await screen.findByRole('grid', { name: 'Customers' })
+
+    await user.click(screen.getByRole('button', { name: 'New customer' }))
+    const dialog = await screen.findByRole('dialog', { name: 'New customer' })
+    await user.type(
+      within(dialog).getByRole('textbox', { name: 'Name' }),
+      'Escola Sem Email',
+    )
+    const email = within(dialog).getByRole('textbox', { name: 'Billing email' })
+    await user.type(email, 'ops@nowhere.example')
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Create customer' }),
+    )
+
+    expect(
+      await within(dialog).findByText('This domain does not receive email'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Some fields need attention')).toBeNull()
+
+    await user.type(email, 'x')
+    await user.tab()
+    await waitFor(() =>
+      expect(
+        within(dialog).queryByText('This domain does not receive email'),
+      ).not.toBeInTheDocument(),
+    )
   })
 })

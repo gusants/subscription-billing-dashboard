@@ -16,7 +16,7 @@ describe('createQueryClient', () => {
       .execute(undefined)
       .catch(() => undefined)
 
-    expect(await screen.findByText('Action failed')).toBeInTheDocument()
+    expect(await screen.findByText('Something went wrong')).toBeInTheDocument()
     expect(screen.getByText('Card was declined.')).toBeInTheDocument()
   })
 })
@@ -29,6 +29,7 @@ describe('shouldRetryQuery', () => {
     expect(shouldRetryQuery(0, new ApiError(503, undefined))).toBe(true)
     expect(shouldRetryQuery(1, new ApiError(503, undefined))).toBe(false)
     expect(shouldRetryQuery(0, new TypeError('Failed to fetch'))).toBe(true)
+    expect(shouldRetryQuery(0, new ApiError(0, undefined))).toBe(true)
     expect(shouldRetryQuery(0, new ApiError(404, undefined))).toBe(false)
   })
 })

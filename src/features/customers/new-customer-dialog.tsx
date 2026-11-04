@@ -1,3 +1,4 @@
+import { showServerFieldErrors } from '../../components/form/server-field-errors'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { UserPlus } from 'lucide-react'
@@ -21,6 +22,7 @@ export function NewCustomerDialog() {
   const navigate = useNavigate()
   const createCustomer = useMutation({
     mutationFn: customersApi.create,
+    meta: { showsFieldErrors: true },
     onSuccess: async (customer) => {
       await invalidateAfter(queryClient, { type: 'customer-created' })
       notify.success('Customer created', customer.name)
@@ -31,9 +33,12 @@ export function NewCustomerDialog() {
     defaultValues: { name: '', email: '' },
     validators: { onBlur: customerFormSchema, onSubmit: customerFormSchema },
     onSubmit: async ({ value, formApi }) => {
-      const customer = await createCustomer.mutateAsync(
-        customerFormSchema.parse(value),
-      )
+      const customer = await createCustomer
+        .mutateAsync(customerFormSchema.parse(value))
+        .catch((error: unknown) => {
+          showServerFieldErrors(formApi, error)
+          throw error
+        })
       formApi.reset()
       setOpen(false)
       void navigate({

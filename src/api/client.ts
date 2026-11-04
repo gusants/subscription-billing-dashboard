@@ -6,12 +6,24 @@ import type { PendingPaths } from './pending-paths'
 
 export type ApiPaths = paths & PendingPaths
 
+export const NETWORK_ERROR_STATUS = 0
+
 export class ApiError extends Error {
   readonly status: number
   readonly body: ApiErrorBody | undefined
 
-  constructor(status: number, body: ApiErrorBody | undefined) {
-    super(body?.message ?? `Request failed with status ${status}`)
+  constructor(
+    status: number,
+    body: ApiErrorBody | undefined,
+    options?: ErrorOptions,
+  ) {
+    super(
+      body?.message ??
+        (status === NETWORK_ERROR_STATUS
+          ? 'The API could not be reached'
+          : `Request failed with status ${status}`),
+      options,
+    )
     this.name = 'ApiError'
     this.status = status
     this.body = body
@@ -50,7 +62,9 @@ type ClientResult<Data> = {
 export async function unwrap<Data>(
   pending: Promise<ClientResult<Data>>,
 ): Promise<Data> {
-  const { data, error, response } = await pending
+  const { data, error, response } = await pending.catch((cause: unknown) => {
+    throw new ApiError(NETWORK_ERROR_STATUS, undefined, { cause })
+  })
   if (!response.ok)
     throw new ApiError(response.status, isErrorBody(error) ? error : undefined)
   return data as Data
