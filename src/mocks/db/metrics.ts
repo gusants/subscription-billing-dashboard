@@ -1,0 +1,156 @@
+import type {
+  CustomerSummary,
+  MetricsOverview,
+  MetricsOverviewParams,
+  Plan,
+  SubscriptionStatus,
+} from '../../api/contract'
+import type { DemoDatabase } from '../demo-types'
+import { addMonths, daysBetween } from './clock'
+import { notFound } from './demo-api-error'
+import { chargesOf, findCustomer, findPlan, subscriptionsOf } from './lookups'
+
+const MONTHS_IN_CHART = 12
+const MONTHS_PER_YEAR = 12
+const AVERAGE_DAYS_PER_MONTH = 30.44
+const SUBSCRIPTION_STATUSES: SubscriptionStatus[] = [
+  'active',
+  'past_due',
+  'incomplete',
+  'canceled',
+]
+const RESOLVED_CHARGE_STATUSES = new Set([
+  'paid',
+  'failed',
+  'expired',
+  'uncollectible',
+])
+const DEMO_PROMPT_VERSION = 'demo'
+
+function monthlyAmountCents(plan: Plan) {
+  return plan.interval === 'yearly'
+    ? Math.round(plan.amountCents / MONTHS_PER_YEAR)
+    : plan.amountCents
+}
+
+function monthKey(date: Date) {
+  return date.toISOString().slice(0, 7)
+}
+
+function startOfMonth(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1))
+}
+
+function roundTo(value: number, decimals: number) {
+  const factor = 10 ** decimals
+  return Math.round(value * factor) / factor
+}
+
+function revenueByMonth(db: DemoDatabase, lastMonth: Date) {
+  const firstMonth = addMonths(startOfMonth(lastMonth), -(MONTHS_IN_CHART - 1))
+  const months = Array.from({ length: MONTHS_IN_CHART }, (_, index) =>
+    monthKey(addMonths(firstMonth, index)),
+  )
+  const totals = new Map(months.map((month) => [month, 0]))
+  for (const charge of db.charges) {
+    if (charge.status !== 'paid' || !charge.paidAt) continue
+    const month = charge.paidAt.slice(0, 7)
+    const total = totals.get(month)
+    if (total !== undefined) totals.set(month, total + charge.amountCents)
+  }
+  return months.map((month) => ({
+    month,
+    revenueCents: totals.get(month) ?? 0,
+  }))
+}
+
+export function metricsOverview(
+  db: DemoDatabase,
+  params: MetricsOverviewParams,
+): MetricsOverview {
+  const now = new Date(db.now)
+  const from = params.from ?? startOfMonth(now).toISOString().slice(0, 10)
+  const to = params.to ?? now.toISOString().slice(0, 10)
+  const billable = db.subscriptions.filter(
+    (s) => s.status === 'active' || s.status === 'past_due',
+  )
+  const activeSubscriptions = db.subscriptions.filter(
+    (s) => s.status === 'active',
+  ).length
+  const pastDueSubscriptions = db.subscriptions.filter(
+    (s) => s.status === 'past_due',
+  ).length
+
+  return {
+    period: { from, to },
+    mrrCents: billable.reduce(
+      (total, s) => total + monthlyAmountCents(findPlan(db, s.planId)),
+      0,
+    ),
+    activeSubscriptions,
+    pastDueSubscriptions,
+    delinquencyRate:
+      billable.length === 0
+        ? 0
+        : roundTo(pastDueSubscriptions / billable.length, 4),
+    revenueByMonth: revenueByMonth(db, new Date(to)),
+    subscriptionsByStatus: SUBSCRIPTION_STATUSES.map((status) => ({
+      status,
+      count: db.subscriptions.filter((s) => s.status === status).length,
+    })),
+  }
+}
+
+export function customerSummary(db: DemoDatabase, id: string): CustomerSummary {
+  const customer = findCustomer(db, id)
+  const narrative = db.summaries[id]
+  if (!narrative) throw notFound('Summary for customer', id)
+
+  const charges = chargesOf(db, id)
+  const paid = charges.filter(
+    (charge) => charge.status === 'paid' && charge.paidAt,
+  )
+  const resolved = charges.filter((charge) =>
+    RESOLVED_CHARGE_STATUSES.has(charge.status),
+  )
+  const daysLate = paid.map((charge) =>
+    Math.max(
+      0,
+      daysBetween(
+        new Date(charge.dueDate),
+        new Date(charge.paidAt ?? charge.dueDate),
+      ),
+    ),
+  )
+  const firstSubscription = subscriptionsOf(db, id)
+    .map((s) => s.createdAt)
+    .sort()[0]
+
+  return {
+    customerId: customer.id,
+    source: 'fallback',
+    promptVersion: DEMO_PROMPT_VERSION,
+    metrics: {
+      monthsAsCustomer: Math.floor(
+        daysBetween(
+          new Date(firstSubscription ?? customer.createdAt),
+          new Date(db.now),
+        ) / AVERAGE_DAYS_PER_MONTH,
+      ),
+      totalPaidCents: paid.reduce(
+        (total, charge) => total + charge.amountCents,
+        0,
+      ),
+      failedAttempts: charges
+        .flatMap((charge) => charge.attempts)
+        .filter((a) => a.result === 'declined').length,
+      averageDaysLate:
+        daysLate.length === 0
+          ? 0
+          : roundTo(daysLate.reduce((a, b) => a + b, 0) / daysLate.length, 1),
+      paymentSuccessRate:
+        resolved.length === 0 ? 0 : roundTo(paid.length / resolved.length, 2),
+    },
+    ...narrative,
+  }
+}
