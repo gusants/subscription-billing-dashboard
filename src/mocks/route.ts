@@ -19,11 +19,16 @@ type RouteContext = {
   params: Record<string, string | readonly string[] | undefined>
 }
 
-function simulatedLatency() {
+type Latency = { minMs: number; maxMs: number }
+
+const DEFAULT_LATENCY: Latency = {
+  minMs: MIN_LATENCY_MS,
+  maxMs: MAX_LATENCY_MS,
+}
+
+function simulatedLatency({ minMs, maxMs }: Latency) {
   if (import.meta.env.MODE === 'test') return Promise.resolve()
-  return delay(
-    MIN_LATENCY_MS + Math.random() * (MAX_LATENCY_MS - MIN_LATENCY_MS),
-  )
+  return delay(minMs + Math.random() * (maxMs - minMs))
 }
 
 function errorResponse(
@@ -37,11 +42,14 @@ function errorResponse(
   })
 }
 
+export const SUMMARY_LATENCY: Latency = { minMs: 1500, maxMs: 3000 }
+
 export function route(
   handler: (context: RouteContext) => RouteResult | Promise<RouteResult>,
+  latency: Latency = DEFAULT_LATENCY,
 ) {
   return async (context: RouteContext) => {
-    await simulatedLatency()
+    await simulatedLatency(latency)
     if (demoFlags.getState().isFailingRequests) {
       return errorResponse(
         503,

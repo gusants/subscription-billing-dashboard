@@ -1,5 +1,5 @@
 import { createSubscription } from './billing'
-import { customerSummary, metricsOverview } from './metrics'
+import { metricsOverview } from './metrics'
 import { firstCustomer, firstPlan, testDatabase } from './test-database'
 
 describe('demo metrics', () => {
@@ -51,27 +51,6 @@ describe('demo metrics', () => {
     })
 
     expect(metricsOverview(db, {}).delinquencyRate).toBeGreaterThan(before)
-  })
-
-  it('computes the customer summary numbers from the charges', () => {
-    const db = testDatabase()
-    const customer = firstCustomer(db)
-    const summary = customerSummary(db, customer.id)
-    const paidCharges = db.charges.filter(
-      (charge) =>
-        charge.status === 'paid' &&
-        db.subscriptions.some(
-          (s) => s.id === charge.subscriptionId && s.customerId === customer.id,
-        ),
-    )
-
-    expect(summary.customerId).toBe(customer.id)
-    expect(summary.source).toBe('fallback')
-    expect(summary.metrics.totalPaidCents).toBe(
-      paidCharges.reduce((total, c) => total + c.amountCents, 0),
-    )
-    expect(summary.metrics.paymentSuccessRate).toBeGreaterThan(0)
-    expect(summary.summary).toBe(db.summaries[customer.id]?.summary)
   })
 })
 

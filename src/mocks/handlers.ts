@@ -12,7 +12,9 @@ import {
 import { createCustomer, createPlan } from './db/catalog-writes'
 import { demoDbStore } from './db/demo-db-store'
 import { findSubscription } from './db/lookups'
-import { customerSummary, metricsOverview } from './db/metrics'
+import { customerSummary } from './db/customer-summary'
+import { metricsOverview } from './db/metrics'
+import { demoFlags } from './demo-flags'
 import {
   customerCharges,
   customerDetail,
@@ -26,7 +28,7 @@ import {
   REPLAYED_HEADER,
   withIdempotency,
 } from './idempotency'
-import { param, route, searchParams } from './route'
+import { param, route, searchParams, SUMMARY_LATENCY } from './route'
 import {
   chargeHistoryQuery,
   createCustomerBody,
@@ -86,9 +88,16 @@ export const handlers = [
   ),
   http.get(
     url('/customers/:id/summary'),
-    route((context) => ({
-      body: store().read((db) => customerSummary(db, param(context, 'id'))),
-    })),
+    route(
+      (context) => ({
+        body: store().read((db) =>
+          customerSummary(db, param(context, 'id'), {
+            isLlmFailing: demoFlags.getState().isLlmFailing,
+          }),
+        ),
+      }),
+      SUMMARY_LATENCY,
+    ),
   ),
 
   http.get(

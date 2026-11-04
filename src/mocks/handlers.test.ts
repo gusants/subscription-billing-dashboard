@@ -53,7 +53,7 @@ describe('demo handlers', () => {
     expect(detail.subscriptions.length).toBeGreaterThan(0)
     expect(charges.data).toHaveLength(3)
     expect(charges.data[0]).not.toHaveProperty('nextRetryAt')
-    expect(summary).toMatchObject({ customerId, source: 'fallback' })
+    expect(summary).toMatchObject({ customerId, source: 'llm' })
   })
 
   it('creates customers and rejects duplicate emails', async () => {

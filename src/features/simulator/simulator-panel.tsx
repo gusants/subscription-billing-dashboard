@@ -1,12 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { useState } from 'react'
-import { Button, Heading, Switch } from 'react-aria-components'
+import { Button, Heading } from 'react-aria-components'
 import { simulatorApi } from '../../api/endpoints'
 import { invalidateAfter, type BillingEvent } from '../../api/query-keys'
 import { isDemoMode } from '../../lib/env'
 import { useUiPreferences } from '../../lib/ui-preferences'
 import { demoFlags } from '../../mocks/demo-flags'
+import { DemoSwitch } from './demo-switch'
 import { SimulatorAction, type ActionOutcome } from './simulator-action'
 import { SimulatorLog, type LogEntry } from './simulator-log'
 import { TargetSelect } from './target-select'
@@ -29,6 +30,9 @@ export function SimulatorPanel() {
   const [log, setLog] = useState<LogEntry[]>([])
   const [isFailing, setFailing] = useState(
     () => demoFlags.getState().isFailingRequests,
+  )
+  const [isLlmFailing, setLlmFailing] = useState(
+    () => demoFlags.getState().isLlmFailing,
   )
 
   const record = (title: string, outcome: ActionOutcome) =>
@@ -56,6 +60,17 @@ export function SimulatorPanel() {
         : 'Requests succeed again',
     })
     void refresh({ type: 'demo-reset' })
+  }
+
+  const toggleLlmFailure = (isSelected: boolean) => {
+    demoFlags.getState().setLlmFailing(isSelected)
+    setLlmFailing(isSelected)
+    record('Simulate LLM failure', {
+      status: 'success',
+      message: isSelected
+        ? 'Summaries now use the rule-based fallback'
+        : 'Summaries use the AI model again',
+    })
   }
 
   return (
@@ -191,21 +206,20 @@ export function SimulatorPanel() {
           />
 
           {isDemoMode && (
-            <Switch
-              isSelected={isFailing}
-              onChange={toggleFailures}
-              className="group border-border flex cursor-default items-center justify-between gap-3 rounded-lg border p-3"
-            >
-              <span className="flex flex-col">
-                <span className="font-medium">Simulate API error</span>
-                <span className="text-fg-muted text-xs">
-                  Every request fails, to show error states.
-                </span>
-              </span>
-              <span className="bg-border-strong group-data-selected:bg-danger flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors">
-                <span className="bg-surface size-4 rounded-full shadow-[0_1px_2px_var(--shadow-color)] transition-transform group-data-selected:translate-x-4" />
-              </span>
-            </Switch>
+            <>
+              <DemoSwitch
+                label="Simulate API error"
+                description="Every request fails, to show error states."
+                isSelected={isFailing}
+                onChange={toggleFailures}
+              />
+              <DemoSwitch
+                label="Simulate LLM failure"
+                description="AI summaries fall back to rules."
+                isSelected={isLlmFailing}
+                onChange={toggleLlmFailure}
+              />
+            </>
           )}
 
           <SimulatorLog entries={log} />

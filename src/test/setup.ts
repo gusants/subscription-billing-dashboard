@@ -19,6 +19,7 @@ afterEach(() => {
   server.resetHandlers()
   demoDbStore.getState().reset()
   demoFlags.getState().setFailingRequests(false)
+  demoFlags.getState().setLlmFailing(false)
   localStorage.clear()
   useUiPreferences.setState(initialUiPreferences, true)
   delete document.documentElement.dataset.theme
