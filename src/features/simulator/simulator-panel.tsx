@@ -1,10 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { useState } from 'react'
-import { Button, Heading } from 'react-aria-components'
+import {
+  Button,
+  Dialog,
+  Heading,
+  Modal,
+  ModalOverlay,
+} from 'react-aria-components'
 import { simulatorApi } from '../../api/endpoints'
 import { invalidateAfter, type BillingEvent } from '../../api/query-keys'
 import { isDemoMode } from '../../lib/env'
+import { useIsDesktop } from '../../lib/use-is-desktop'
 import { useUiPreferences } from '../../lib/ui-preferences'
 import { demoFlags } from '../../mocks/demo-flags'
 import { DemoSwitch } from './demo-switch'
@@ -92,170 +99,192 @@ export function SimulatorPanel() {
     })
   }
 
-  return (
+  const isDesktop = useIsDesktop()
+
+  const content = (
     <>
-      <div
-        aria-hidden
-        onClick={() => setSimulatorOpen(false)}
-        className="bg-fg/30 fixed inset-0 z-10 lg:hidden"
-      />
+      <div className="border-border flex items-center justify-between border-b px-5 py-4">
+        <div className="flex flex-col">
+          <Heading id="simulator-heading" level={2} className="font-semibold">
+            Simulator
+          </Heading>
+          <span className="text-fg-muted text-xs">
+            {targets.customerName ?? 'No customer selected'}
+          </span>
+        </div>
+        <Button
+          aria-label="Close simulator"
+          onPress={() => setSimulatorOpen(false)}
+          className="text-fg-subtle hover:bg-surface-muted hover:text-fg grid size-7 cursor-default place-items-center rounded-md transition-colors"
+        >
+          <X aria-hidden size={16} strokeWidth={1.75} />
+        </Button>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
+        <SimulatorAction
+          title="Approve Pix"
+          description="The customer pays a pending Pix charge."
+          submitLabel="Approve"
+          isDisabled={targets.pendingPix.length === 0}
+          onDone={record}
+          run={async (formData) => {
+            const chargeId = formValue(formData, 'chargeId')
+            await simulatorApi.payCharge(chargeId)
+            const isSettled = await settle(chargeId)
+            await refresh(customerEvent('charge-paid'))
+            return isSettled ? 'Pix payment approved' : NOT_SETTLED_YET
+          }}
+        >
+          <TargetSelect
+            name="chargeId"
+            label="Pending Pix charge"
+            options={targets.pendingPix}
+            emptyLabel={
+              targets.customerId
+                ? 'No pending Pix charge for this customer.'
+                : NO_CUSTOMER
+            }
+          />
+        </SimulatorAction>
+
+        <SimulatorAction
+          title="Expire boleto"
+          description="A pending boleto passes its due date unpaid."
+          submitLabel="Expire"
+          isDisabled={targets.pendingBoleto.length === 0}
+          onDone={record}
+          run={async (formData) => {
+            const chargeId = formValue(formData, 'chargeId')
+            await simulatorApi.expireCharge(chargeId)
+            const isSettled = await settle(chargeId)
+            await refresh(customerEvent('charge-expired'))
+            return isSettled
+              ? 'Boleto expired, a new one is scheduled'
+              : NOT_SETTLED_YET
+          }}
+        >
+          <TargetSelect
+            name="chargeId"
+            label="Pending boleto"
+            options={targets.pendingBoleto}
+            emptyLabel={
+              targets.customerId
+                ? 'No pending boleto for this customer.'
+                : NO_CUSTOMER
+            }
+          />
+        </SimulatorAction>
+
+        <SimulatorAction
+          title="Force card decline"
+          description="The card on file starts declining for insufficient funds."
+          submitLabel="Force decline"
+          isDisabled={targets.cardSubscriptions.length === 0}
+          onDone={record}
+          run={async (formData) => {
+            const subscriptionId = formValue(formData, 'subscriptionId')
+            await simulatorApi.setSubscriptionCard(
+              subscriptionId,
+              'tok_insufficient_funds',
+            )
+            await refresh({ type: 'card-changed', subscriptionId })
+            return 'The next card attempt will be declined'
+          }}
+        >
+          <TargetSelect
+            name="subscriptionId"
+            label="Card subscription"
+            options={targets.cardSubscriptions}
+            emptyLabel={
+              targets.customerId
+                ? 'This customer has no card subscription.'
+                : NO_CUSTOMER
+            }
+          />
+        </SimulatorAction>
+
+        <SimulatorAction
+          title="Advance retry clock"
+          description="Run every scheduled retry now (D+1, D+3, D+7)."
+          submitLabel="Run retries"
+          unavailableReason={liveApiNote(LIVE_API_NOTES.retries)}
+          onDone={record}
+          run={async () => {
+            const { promoted } = await simulatorApi.runRetriesNow()
+            await refresh({ type: 'retries-run' })
+            return promoted === 1
+              ? 'Ran 1 scheduled retry'
+              : `Ran ${promoted} scheduled retries`
+          }}
+        />
+
+        <SimulatorAction
+          title="Reset demo"
+          description="Restore the original demo data."
+          submitLabel="Reset"
+          unavailableReason={liveApiNote(LIVE_API_NOTES.reset)}
+          onDone={record}
+          run={async () => {
+            await simulatorApi.reset()
+            await refresh({ type: 'demo-reset' })
+            return 'Demo data restored'
+          }}
+        />
+
+        <DemoSwitch
+          label="Simulate API error"
+          description={
+            liveApiNote(LIVE_API_NOTES.apiError) ??
+            'Every request fails, to show error states.'
+          }
+          isSelected={isFailing}
+          isDisabled={!isDemoMode}
+          onChange={toggleFailures}
+        />
+        <DemoSwitch
+          label="Simulate LLM failure"
+          description={
+            liveApiNote(LIVE_API_NOTES.llmFailure) ??
+            'AI summaries fall back to rules.'
+          }
+          isSelected={isLlmFailing}
+          isDisabled={!isDemoMode}
+          onChange={toggleLlmFailure}
+        />
+
+        <SimulatorLog entries={log} />
+      </div>
+    </>
+  )
+
+  if (isDesktop)
+    return (
       <aside
         aria-labelledby="simulator-heading"
-        className="border-border bg-surface shadow-panel fixed inset-y-0 right-0 z-20 flex w-[min(20rem,100vw)] flex-col border-l lg:sticky lg:top-0 lg:h-dvh lg:shadow-none"
+        className="border-border bg-surface sticky top-0 z-20 flex h-dvh w-80 flex-col border-l"
       >
-        <div className="border-border flex items-center justify-between border-b px-5 py-4">
-          <div className="flex flex-col">
-            <Heading id="simulator-heading" level={2} className="font-semibold">
-              Simulator
-            </Heading>
-            <span className="text-fg-muted text-xs">
-              {targets.customerName ?? 'No customer selected'}
-            </span>
-          </div>
-          <Button
-            aria-label="Close simulator"
-            onPress={() => setSimulatorOpen(false)}
-            className="text-fg-subtle hover:bg-surface-muted hover:text-fg grid size-7 cursor-default place-items-center rounded-md transition-colors"
-          >
-            <X aria-hidden size={16} strokeWidth={1.75} />
-          </Button>
-        </div>
-
-        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
-          <SimulatorAction
-            title="Approve Pix"
-            description="The customer pays a pending Pix charge."
-            submitLabel="Approve"
-            isDisabled={targets.pendingPix.length === 0}
-            onDone={record}
-            run={async (formData) => {
-              const chargeId = formValue(formData, 'chargeId')
-              await simulatorApi.payCharge(chargeId)
-              const isSettled = await settle(chargeId)
-              await refresh(customerEvent('charge-paid'))
-              return isSettled ? 'Pix payment approved' : NOT_SETTLED_YET
-            }}
-          >
-            <TargetSelect
-              name="chargeId"
-              label="Pending Pix charge"
-              options={targets.pendingPix}
-              emptyLabel={
-                targets.customerId
-                  ? 'No pending Pix charge for this customer.'
-                  : NO_CUSTOMER
-              }
-            />
-          </SimulatorAction>
-
-          <SimulatorAction
-            title="Expire boleto"
-            description="A pending boleto passes its due date unpaid."
-            submitLabel="Expire"
-            isDisabled={targets.pendingBoleto.length === 0}
-            onDone={record}
-            run={async (formData) => {
-              const chargeId = formValue(formData, 'chargeId')
-              await simulatorApi.expireCharge(chargeId)
-              const isSettled = await settle(chargeId)
-              await refresh(customerEvent('charge-expired'))
-              return isSettled
-                ? 'Boleto expired, a new one is scheduled'
-                : NOT_SETTLED_YET
-            }}
-          >
-            <TargetSelect
-              name="chargeId"
-              label="Pending boleto"
-              options={targets.pendingBoleto}
-              emptyLabel={
-                targets.customerId
-                  ? 'No pending boleto for this customer.'
-                  : NO_CUSTOMER
-              }
-            />
-          </SimulatorAction>
-
-          <SimulatorAction
-            title="Force card decline"
-            description="The card on file starts declining for insufficient funds."
-            submitLabel="Force decline"
-            isDisabled={targets.cardSubscriptions.length === 0}
-            onDone={record}
-            run={async (formData) => {
-              const subscriptionId = formValue(formData, 'subscriptionId')
-              await simulatorApi.setSubscriptionCard(
-                subscriptionId,
-                'tok_insufficient_funds',
-              )
-              await refresh({ type: 'card-changed', subscriptionId })
-              return 'The next card attempt will be declined'
-            }}
-          >
-            <TargetSelect
-              name="subscriptionId"
-              label="Card subscription"
-              options={targets.cardSubscriptions}
-              emptyLabel={
-                targets.customerId
-                  ? 'This customer has no card subscription.'
-                  : NO_CUSTOMER
-              }
-            />
-          </SimulatorAction>
-
-          <SimulatorAction
-            title="Advance retry clock"
-            description="Run every scheduled retry now (D+1, D+3, D+7)."
-            submitLabel="Run retries"
-            unavailableReason={liveApiNote(LIVE_API_NOTES.retries)}
-            onDone={record}
-            run={async () => {
-              const { promoted } = await simulatorApi.runRetriesNow()
-              await refresh({ type: 'retries-run' })
-              return promoted === 1
-                ? 'Ran 1 scheduled retry'
-                : `Ran ${promoted} scheduled retries`
-            }}
-          />
-
-          <SimulatorAction
-            title="Reset demo"
-            description="Restore the original demo data."
-            submitLabel="Reset"
-            unavailableReason={liveApiNote(LIVE_API_NOTES.reset)}
-            onDone={record}
-            run={async () => {
-              await simulatorApi.reset()
-              await refresh({ type: 'demo-reset' })
-              return 'Demo data restored'
-            }}
-          />
-
-          <DemoSwitch
-            label="Simulate API error"
-            description={
-              liveApiNote(LIVE_API_NOTES.apiError) ??
-              'Every request fails, to show error states.'
-            }
-            isSelected={isFailing}
-            isDisabled={!isDemoMode}
-            onChange={toggleFailures}
-          />
-          <DemoSwitch
-            label="Simulate LLM failure"
-            description={
-              liveApiNote(LIVE_API_NOTES.llmFailure) ??
-              'AI summaries fall back to rules.'
-            }
-            isSelected={isLlmFailing}
-            isDisabled={!isDemoMode}
-            onChange={toggleLlmFailure}
-          />
-
-          <SimulatorLog entries={log} />
-        </div>
+        {content}
       </aside>
-    </>
+    )
+
+  return (
+    <ModalOverlay
+      isOpen
+      isDismissable
+      onOpenChange={(isOpen) => {
+        if (!isOpen) setSimulatorOpen(false)
+      }}
+      className="bg-fg/30 fixed inset-0 z-20"
+    >
+      <Modal className="border-border bg-surface shadow-panel fixed inset-y-0 right-0 w-[min(20rem,100vw)] border-l">
+        <Dialog
+          aria-labelledby="simulator-heading"
+          className="flex h-full flex-col outline-none"
+        >
+          {content}
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
   )
 }

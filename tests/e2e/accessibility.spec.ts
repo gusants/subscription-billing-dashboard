@@ -17,7 +17,9 @@ async function expectNoViolations(page: Page) {
 
 async function openFirstCustomer(page: Page) {
   await page.goto('/customers')
-  await page.locator('a[href^="/customers/cus_"]:visible').first().click()
+  const stackedLink = page.locator('a[href^="/customers/cus_"]:visible')
+  const gridRow = page.getByRole('grid', { name: 'Customers' }).getByRole('row')
+  await stackedLink.or(gridRow.nth(1)).first().click()
 }
 
 const screens = [

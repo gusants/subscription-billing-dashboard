@@ -44,7 +44,7 @@ describe('customers page', () => {
       expect(within(table).getAllByRole('row')).toHaveLength(2),
     )
     expect(
-      within(table).getByRole('link', { name: target.name }),
+      within(table).getByRole('row', { name: new RegExp(target.name) }),
     ).toBeInTheDocument()
   })
 
@@ -121,5 +121,26 @@ describe('customers page', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await customerTable()).toBeInTheDocument()
+  })
+
+  it('makes each row a single tab stop that opens the customer', async () => {
+    const { user, router } = renderApp('/customers')
+    const table = await customerTable()
+
+    expect(within(table).queryAllByRole('link')).toHaveLength(0)
+
+    const firstRow = within(table).getAllByRole('row')[1]!
+    await user.tab()
+    while (!table.contains(document.activeElement)) await user.tab()
+    expect(firstRow).toHaveFocus()
+    await user.tab()
+    expect(table.contains(document.activeElement)).toBe(false)
+
+    await user.tab({ shift: true })
+    await user.keyboard('{Enter}')
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toMatch(/^\/customers\/.+/),
+    )
   })
 })

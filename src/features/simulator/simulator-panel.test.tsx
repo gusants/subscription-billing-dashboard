@@ -29,6 +29,51 @@ function action(panel: HTMLElement, name: string) {
   return within(panel).getByRole('form', { name })
 }
 
+function stubViewport(isDesktop: boolean) {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: isDesktop,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }))
+}
+
+describe('simulator panel below lg', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('is a modal dialog that Escape closes, returning focus to the toggle', async () => {
+    stubViewport(false)
+    const view = renderApp('/customers')
+    await screen.findByRole('heading', { level: 1 })
+    const toggle = screen.getAllByRole('button', { name: 'Simulator' })[0]!
+    await view.user.click(toggle)
+
+    const dialog = await screen.findByRole('dialog', { name: /Simulator/ })
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
+
+    await view.user.keyboard('{Escape}')
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    await waitFor(() => expect(toggle).toHaveFocus())
+  })
+
+  it('stays a docked non-modal complementary region from lg up', async () => {
+    stubViewport(true)
+    const view = renderApp('/customers')
+    await screen.findByRole('heading', { level: 1 })
+    await view.user.click(
+      screen.getAllByRole('button', { name: 'Simulator' })[0]!,
+    )
+
+    expect(
+      await screen.findByRole('complementary', { name: /Simulator/ }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
 describe('simulator panel', () => {
   it('approves a pending Pix and the timeline shows it paid', async () => {
     const { pending, customerId } = customerWithPending('pix')

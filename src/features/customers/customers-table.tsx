@@ -1,4 +1,4 @@
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import {
   Cell,
@@ -44,13 +44,9 @@ export function CustomersTable({ customers }: { customers: Customer[] }) {
             className="group hover:bg-surface-muted/50 data-focus-visible:bg-accent-soft cursor-default outline-none"
           >
             <Cell className="border-border border-t px-4 py-3 font-medium">
-              <Link
-                to="/customers/$customerId"
-                params={{ customerId: customer.id }}
-                className="hover:text-accent hover:underline"
-              >
+              <span className="group-hover:text-accent group-hover:underline">
                 {customer.name}
-              </Link>
+              </span>
             </Cell>
             <Cell className="border-border text-fg-muted border-t px-4 py-3">
               {customer.email}

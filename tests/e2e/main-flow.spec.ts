@@ -85,7 +85,7 @@ test('a declined card turns past due and a retry brings it back', async ({
   const delinquencyAfterDecline = await readPercent(page, 'Delinquency rate')
 
   await page.getByRole('link', { name: 'Customers', exact: true }).click()
-  await page.getByRole('link', { name: /Escola E2E/ }).click()
+  await page.getByRole('row', { name: /Escola E2E/ }).click()
   await page.getByRole('button', { name: 'Simulator' }).last().click()
   const retryClock = page.getByRole('form', { name: 'Advance retry clock' })
   await retryClock.getByRole('button', { name: 'Run retries' }).click()
