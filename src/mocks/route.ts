@@ -1,5 +1,6 @@
-import { delay, HttpResponse } from 'msw'
+import { delay, HttpResponse, type JsonBodyType } from 'msw'
 import { z } from 'zod'
+import type { ApiErrorBody } from '../api/contract'
 import { DemoApiError } from './db/demo-api-error'
 import { demoFlags } from './demo-flags'
 
@@ -8,15 +9,10 @@ const MAX_LATENCY_MS = 700
 const HTTP_OK = 200
 const HTTP_NO_CONTENT = 204
 
-type RouteResult = {
+type RouteResult<Body> = {
   status?: number
-  body?: unknown
+  body?: Body
   headers?: Record<string, string>
-}
-
-type RouteContext = {
-  request: Request
-  params: Record<string, string | readonly string[] | undefined>
 }
 
 type Latency = { minMs: number; maxMs: number }
@@ -36,19 +32,30 @@ function errorResponse(
   message: string,
   details?: unknown[],
 ) {
-  const body = new DemoApiError(statusCode, message).toBody()
-  return HttpResponse.json(details ? { ...body, details } : body, {
-    status: statusCode,
-  })
+  const body: ApiErrorBody = new DemoApiError(statusCode, message).toBody()
+  const response = HttpResponse.json<ApiErrorBody>(
+    details ? { ...body, details } : body,
+    { status: statusCode },
+  )
+  return response as unknown as HttpResponse<never>
+}
+
+function noContent<Body extends JsonBodyType>(
+  headers: Record<string, string> | undefined,
+) {
+  return new HttpResponse(null, {
+    status: HTTP_NO_CONTENT,
+    headers,
+  }) as unknown as HttpResponse<Body>
 }
 
 export const SUMMARY_LATENCY: Latency = { minMs: 1500, maxMs: 3000 }
 
-export function route(
-  handler: (context: RouteContext) => RouteResult | Promise<RouteResult>,
+export function route<Info, Body extends JsonBodyType = null>(
+  handler: (info: Info) => RouteResult<Body> | Promise<RouteResult<Body>>,
   latency: Latency = DEFAULT_LATENCY,
 ) {
-  return async (context: RouteContext) => {
+  return async (info: Info): Promise<HttpResponse<Body>> => {
     await simulatedLatency(latency)
     if (demoFlags.getState().isFailingRequests) {
       return errorResponse(
@@ -57,10 +64,10 @@ export function route(
       )
     }
     try {
-      const { status = HTTP_OK, body, headers } = await handler(context)
+      const { status = HTTP_OK, body, headers } = await handler(info)
       return status === HTTP_NO_CONTENT
-        ? new HttpResponse(null, { status, headers })
-        : HttpResponse.json(body as never, { status, headers })
+        ? noContent<Body>(headers)
+        : HttpResponse.json<Body>(body as Body, { status, headers })
     } catch (error) {
       if (error instanceof DemoApiError)
         return errorResponse(error.statusCode, error.message)
@@ -76,11 +83,6 @@ export function route(
   }
 }
 
-export function param(context: RouteContext, name: string) {
-  const value = context.params[name]
-  return typeof value === 'string' ? value : ''
-}
-
-export function searchParams(context: RouteContext) {
-  return Object.fromEntries(new URL(context.request.url).searchParams)
+export function searchParams(request: Request) {
+  return Object.fromEntries(new URL(request.url).searchParams)
 }

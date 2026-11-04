@@ -33,6 +33,7 @@ export type Charge = ChargeHistory['data'][number]
 export type ChargeStatus = Charge['status']
 export type PaymentAttempt = Charge['attempts'][number]
 export type ChargeRetryResult = Schemas['ChargeRetryResponseDto_Output']
+export type GatewayCharge = Schemas['GatewayChargeResponseDto_Output']
 export type ChargeHistoryParams = NonNullable<
   paths['/customers/{id}/charges']['get']['parameters']['query']
 >

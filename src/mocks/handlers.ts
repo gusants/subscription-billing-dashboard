@@ -1,4 +1,5 @@
-import { http } from 'msw'
+import { createOpenApiHttp } from 'openapi-msw'
+import type { ApiPaths } from '../api/client'
 import { apiBaseUrl } from '../lib/env'
 import {
   cancelSubscription,
@@ -10,25 +11,26 @@ import {
   setSubscriptionCard,
 } from './db/billing'
 import { createCustomer, createPlan } from './db/catalog-writes'
+import { customerSummary } from './db/customer-summary'
 import { demoDbStore } from './db/demo-db-store'
 import { findSubscription } from './db/lookups'
-import { customerSummary } from './db/customer-summary'
 import { metricsOverview } from './db/metrics'
-import { demoFlags } from './demo-flags'
 import {
   customerCharges,
   customerDetail,
   listCustomers,
   listPlans,
+  toGatewayCharge,
   toPublicCharge,
   toPublicSubscription,
 } from './db/queries'
+import { demoFlags } from './demo-flags'
 import {
   clearIdempotencyKeys,
   REPLAYED_HEADER,
   withIdempotency,
 } from './idempotency'
-import { param, route, searchParams, SUMMARY_LATENCY } from './route'
+import { route, searchParams, SUMMARY_LATENCY } from './route'
 import {
   chargeHistoryQuery,
   createCustomerBody,
@@ -43,24 +45,24 @@ import {
 const CREATED = 201
 const NO_CONTENT = 204
 
-const url = (path: string) => `${apiBaseUrl}${path}`
+const http = createOpenApiHttp<ApiPaths>({ baseUrl: apiBaseUrl })
 const store = () => demoDbStore.getState()
 
 export const handlers = [
   http.get(
-    url('/health'),
-    route(() => ({ body: { status: 'ok' } })),
+    '/health',
+    route(() => ({ body: { status: 'ok' as const } })),
   ),
 
   http.get(
-    url('/customers'),
-    route((context) => {
-      const query = customerListQuery.parse(searchParams(context))
+    '/customers',
+    route(({ request }) => {
+      const query = customerListQuery.parse(searchParams(request))
       return { body: store().read((db) => listCustomers(db, query)) }
     }),
   ),
   http.post(
-    url('/customers'),
+    '/customers',
     route(async ({ request }) => {
       const input = createCustomerBody.parse(await request.json())
       return {
@@ -70,28 +72,26 @@ export const handlers = [
     }),
   ),
   http.get(
-    url('/customers/:id'),
-    route((context) => ({
-      body: store().read((db) => customerDetail(db, param(context, 'id'))),
+    '/customers/{id}',
+    route(({ params }) => ({
+      body: store().read((db) => customerDetail(db, params.id)),
     })),
   ),
   http.get(
-    url('/customers/:id/charges'),
-    route((context) => {
-      const query = chargeHistoryQuery.parse(searchParams(context))
+    '/customers/{id}/charges',
+    route(({ params, request }) => {
+      const query = chargeHistoryQuery.parse(searchParams(request))
       return {
-        body: store().read((db) =>
-          customerCharges(db, param(context, 'id'), query),
-        ),
+        body: store().read((db) => customerCharges(db, params.id, query)),
       }
     }),
   ),
   http.get(
-    url('/customers/:id/summary'),
+    '/customers/{id}/summary',
     route(
-      (context) => ({
+      ({ params }) => ({
         body: store().read((db) =>
-          customerSummary(db, param(context, 'id'), {
+          customerSummary(db, params.id, {
             isLlmFailing: demoFlags.getState().isLlmFailing,
           }),
         ),
@@ -101,14 +101,14 @@ export const handlers = [
   ),
 
   http.get(
-    url('/plans'),
-    route((context) => {
-      const query = planListQuery.parse(searchParams(context))
+    '/plans',
+    route(({ request }) => {
+      const query = planListQuery.parse(searchParams(request))
       return { body: store().read((db) => listPlans(db, query)) }
     }),
   ),
   http.post(
-    url('/plans'),
+    '/plans',
     route(async ({ request }) => {
       const input = createPlanBody.parse(await request.json())
       return {
@@ -119,7 +119,7 @@ export const handlers = [
   ),
 
   http.post(
-    url('/subscriptions'),
+    '/subscriptions',
     route(async ({ request }) => {
       const rawBody = await request.text()
       const input = createSubscriptionBody.parse(JSON.parse(rawBody))
@@ -152,27 +152,27 @@ export const handlers = [
     }),
   ),
   http.get(
-    url('/subscriptions/:id'),
-    route((context) => ({
+    '/subscriptions/{id}',
+    route(({ params }) => ({
       body: store().read((db) =>
-        toPublicSubscription(findSubscription(db, param(context, 'id'))),
+        toPublicSubscription(findSubscription(db, params.id)),
       ),
     })),
   ),
   http.post(
-    url('/subscriptions/:id/cancel'),
-    route((context) => ({
+    '/subscriptions/{id}/cancel',
+    route(({ params }) => ({
       body: store().transact((db) =>
-        toPublicSubscription(cancelSubscription(db, param(context, 'id'))),
+        toPublicSubscription(cancelSubscription(db, params.id)),
       ),
     })),
   ),
 
   http.post(
-    url('/charges/:id/retry'),
-    route((context) => ({
+    '/charges/{id}/retry',
+    route(({ params }) => ({
       body: store().transact((db) => {
-        const { charge, subscription } = retryCharge(db, param(context, 'id'))
+        const { charge, subscription } = retryCharge(db, params.id)
         return {
           charge: toPublicCharge(charge),
           subscription: { id: subscription.id, status: subscription.status },
@@ -182,39 +182,39 @@ export const handlers = [
   ),
 
   http.get(
-    url('/metrics/overview'),
-    route((context) => {
-      const query = metricsQuery.parse(searchParams(context))
+    '/metrics/overview',
+    route(({ request }) => {
+      const query = metricsQuery.parse(searchParams(request))
       return { body: store().read((db) => metricsOverview(db, query)) }
     }),
   ),
 
   http.post(
-    url('/fake-gateway/charges/:id/pay'),
-    route((context) => {
-      store().transact((db) => payInstantCharge(db, param(context, 'id')))
+    '/fake-gateway/charges/{id}/pay',
+    route(({ params }) => ({
+      body: store().transact((db) =>
+        toGatewayCharge(db, payInstantCharge(db, params.id)),
+      ),
+    })),
+  ),
+  http.post(
+    '/fake-gateway/charges/{id}/expire',
+    route(({ params }) => ({
+      body: store().transact((db) =>
+        toGatewayCharge(db, expireInstantCharge(db, params.id)),
+      ),
+    })),
+  ),
+  http.post(
+    '/fake-gateway/subscriptions/{id}/card',
+    route(async ({ params, request }) => {
+      const { cardToken } = setCardBody.parse(await request.json())
+      store().transact((db) => setSubscriptionCard(db, params.id, cardToken))
       return { status: NO_CONTENT }
     }),
   ),
   http.post(
-    url('/fake-gateway/charges/:id/expire'),
-    route((context) => {
-      store().transact((db) => expireInstantCharge(db, param(context, 'id')))
-      return { status: NO_CONTENT }
-    }),
-  ),
-  http.post(
-    url('/fake-gateway/subscriptions/:id/card'),
-    route(async (context) => {
-      const { cardToken } = setCardBody.parse(await context.request.json())
-      store().transact((db) =>
-        setSubscriptionCard(db, param(context, 'id'), cardToken),
-      )
-      return { status: NO_CONTENT }
-    }),
-  ),
-  http.post(
-    url('/fake-gateway/reset'),
+    '/fake-gateway/reset',
     route(() => {
       store().reset()
       clearIdempotencyKeys()
@@ -222,7 +222,7 @@ export const handlers = [
     }),
   ),
   http.post(
-    url('/dev/retries/run-now'),
+    '/dev/retries/run-now',
     route(() => ({ body: store().transact(runRetriesNow) })),
   ),
 ]

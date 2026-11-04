@@ -147,8 +147,15 @@ describe('demo handlers', () => {
     const pending = seeded().charges.filter((c) => c.status === 'pending')
     const [toPay, toExpire] = pending
 
-    await simulatorApi.payCharge(toPay!.id)
-    await simulatorApi.expireCharge(toExpire!.id)
+    const paid = await simulatorApi.payCharge(toPay!.id)
+    const expired = await simulatorApi.expireCharge(toExpire!.id)
+
+    expect(paid).toMatchObject({ externalRef: toPay!.id, status: 'paid' })
+    expect(paid.paidAt).toBeDefined()
+    expect(expired).toMatchObject({
+      externalRef: toExpire!.id,
+      status: 'expired',
+    })
 
     const charges = seeded().charges
     expect(charges.find((c) => c.id === toPay!.id)?.status).toBe('paid')

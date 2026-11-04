@@ -1,6 +1,7 @@
 import type {
   ChargeHistoryParams,
   CustomerListParams,
+  GatewayCharge,
   PlanListParams,
 } from '../../api/contract'
 import type { DemoCharge, DemoDatabase, DemoSubscription } from '../demo-types'
@@ -74,6 +75,23 @@ export function toPublicCharge({
   ...charge
 }: DemoCharge) {
   return charge
+}
+
+export function toGatewayCharge(db: DemoDatabase, charge: DemoCharge) {
+  const subscription = db.subscriptions.find(
+    (candidate) => candidate.id === charge.subscriptionId,
+  )
+  return {
+    id: `gw_${charge.id}`,
+    customerId: subscription?.customerId ?? '',
+    externalRef: charge.id,
+    amountCents: charge.amountCents,
+    method: charge.method,
+    status: charge.status === 'uncollectible' ? 'failed' : charge.status,
+    createdAt: charge.createdAt,
+    ...(charge.paidAt ? { paidAt: charge.paidAt } : {}),
+    ...(charge.expiresAt ? { expiresAt: charge.expiresAt } : {}),
+  } satisfies GatewayCharge
 }
 
 export function toPublicSubscription({
