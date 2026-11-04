@@ -3,3 +3,4 @@ _local
 .impeccable
 src/api/generated
 src/routeTree.gen.ts
+public/mockServiceWorker.js
