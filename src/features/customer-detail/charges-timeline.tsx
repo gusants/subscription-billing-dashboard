@@ -1,22 +1,12 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
 import { EmptyState } from '../../components/feedback/empty-state'
 import { QueryError } from '../../components/feedback/query-error'
 import { Skeleton } from '../../components/feedback/skeleton'
 import { Button } from '../../components/ui/button'
 import { ChargeItem } from './charge-item'
 import { ChargesTable } from './charges-table'
-import { customerChargesQuery } from './charges-queries'
-import { useOptimisticRetry } from './use-optimistic-retry'
+import type { useChargesTimeline } from './use-charges-timeline'
 
 const PLACEHOLDER_CHARGES = 4
-const NO_CHARGES: never[] = []
-
-export function useChargesTimeline(customerId: string) {
-  const query = useInfiniteQuery(customerChargesQuery(customerId))
-  const loadedCharges =
-    query.data?.pages.flatMap((page) => page.data) ?? NO_CHARGES
-  return { query, ...useOptimisticRetry(customerId, loadedCharges) }
-}
 
 type ChargesTimelineProps = {
   timeline: ReturnType<typeof useChargesTimeline>

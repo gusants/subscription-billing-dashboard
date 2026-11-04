@@ -4,9 +4,10 @@ import { ChevronRight } from 'lucide-react'
 import { formatDate } from '../../lib/format-date'
 import { allPlansQuery } from '../plans/plans-queries'
 import { AiSummaryCard } from './ai-summary/ai-summary-card'
-import { ChargesTimeline, useChargesTimeline } from './charges-timeline'
+import { ChargesTimeline } from './charges-timeline'
 import { NewSubscriptionDialog } from './new-subscription-dialog'
 import { RetryButton } from './retry-button'
+import { useChargesTimeline } from './use-charges-timeline'
 import { canRetry } from './use-optimistic-retry'
 import {
   customerDetailQuery,
