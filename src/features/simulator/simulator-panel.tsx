@@ -12,9 +12,12 @@ import { SimulatorAction, type ActionOutcome } from './simulator-action'
 import { SimulatorLog, type LogEntry } from './simulator-log'
 import { TargetSelect } from './target-select'
 import { useSimulatorTargets } from './use-simulator-targets'
+import { waitForSettlement } from './wait-for-settlement'
 
 const MAX_LOG_ENTRIES = 5
 const NO_CUSTOMER = 'Open a customer to target their charges.'
+const NOT_SETTLED_YET =
+  'Done at the gateway. The API has not confirmed it yet; refresh in a moment.'
 const LIVE_API_NOTES = {
   retries:
     'Not in the live API yet. Its queue runs scheduled retries on its own.',
@@ -55,6 +58,10 @@ export function SimulatorPanel() {
       ),
     )
   const refresh = (event: BillingEvent) => invalidateAfter(queryClient, event)
+  const settle = (chargeId: string) =>
+    targets.customerId
+      ? waitForSettlement(targets.customerId, chargeId)
+      : Promise.resolve(true)
   const customerEvent = (
     type: 'charge-paid' | 'charge-expired',
   ): BillingEvent =>
@@ -122,9 +129,11 @@ export function SimulatorPanel() {
             isDisabled={targets.pendingPix.length === 0}
             onDone={record}
             run={async (formData) => {
-              await simulatorApi.payCharge(formValue(formData, 'chargeId'))
+              const chargeId = formValue(formData, 'chargeId')
+              await simulatorApi.payCharge(chargeId)
+              const isSettled = await settle(chargeId)
               await refresh(customerEvent('charge-paid'))
-              return 'Pix payment approved'
+              return isSettled ? 'Pix payment approved' : NOT_SETTLED_YET
             }}
           >
             <TargetSelect
@@ -146,9 +155,13 @@ export function SimulatorPanel() {
             isDisabled={targets.pendingBoleto.length === 0}
             onDone={record}
             run={async (formData) => {
-              await simulatorApi.expireCharge(formValue(formData, 'chargeId'))
+              const chargeId = formValue(formData, 'chargeId')
+              await simulatorApi.expireCharge(chargeId)
+              const isSettled = await settle(chargeId)
               await refresh(customerEvent('charge-expired'))
-              return 'Boleto expired, a new one is scheduled'
+              return isSettled
+                ? 'Boleto expired, a new one is scheduled'
+                : NOT_SETTLED_YET
             }}
           >
             <TargetSelect
