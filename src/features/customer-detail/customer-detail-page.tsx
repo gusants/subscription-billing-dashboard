@@ -3,7 +3,7 @@ import { Link, getRouteApi } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { formatDate } from '../../lib/format-date'
 import { allPlansQuery } from '../plans/plans-queries'
-import { AiSummaryPlaceholder } from './ai-summary-placeholder'
+import { AiSummaryCard } from './ai-summary/ai-summary-card'
 import { ChargesTimeline } from './charges-timeline'
 import { NewSubscriptionDialog } from './new-subscription-dialog'
 import {
@@ -74,7 +74,7 @@ export function CustomerDetailPage() {
           <ChargesTimeline customerId={customer.id} />
         </section>
         <aside className="flex flex-col gap-6">
-          <AiSummaryPlaceholder />
+          <AiSummaryCard customerId={customer.id} />
           {customer.subscriptions.length > 0 && (
             <SubscriptionsPanel
               customerId={customer.id}
