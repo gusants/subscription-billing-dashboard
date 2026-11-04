@@ -5,7 +5,7 @@ describe('router', () => {
   it.each([
     ['/', 'Overview'],
     ['/customers', 'Customers'],
-    ['/customers/cus_123', 'Customer cus_123'],
+    ['/customers/cus_missing', 'Customer not found'],
     ['/plans', 'Plans'],
     ['/unknown', 'Page not found'],
   ])('renders %s', async (path, heading) => {

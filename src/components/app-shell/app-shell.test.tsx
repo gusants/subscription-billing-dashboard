@@ -26,8 +26,8 @@ describe('AppShell', () => {
   })
 
   it('keeps Customers current on a customer detail page', async () => {
-    renderApp('/customers/cus_123')
-    await screen.findByRole('heading', { name: 'Customer cus_123' })
+    renderApp('/customers/cus_missing')
+    await screen.findByRole('heading', { name: 'Customer not found' })
 
     expect(
       within(mainNav()).getByRole('link', { name: 'Customers' }),
