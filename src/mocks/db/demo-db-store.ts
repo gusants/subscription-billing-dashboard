@@ -4,7 +4,7 @@ import type { DemoDatabase } from '../demo-types'
 import seed from '../seed.json'
 
 export const DEMO_DB_STORAGE_KEY = 'cadencia-demo-db'
-export const DEMO_DB_VERSION = 1
+export const DEMO_DB_VERSION = 2
 
 type DemoDbState = {
   db: DemoDatabase

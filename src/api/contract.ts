@@ -68,10 +68,10 @@ export type MetricsOverviewParams = {
   to?: string
 }
 
-export type RiskLevel = 'baixo' | 'medio' | 'alto'
+export type RiskLevel = 'low' | 'medium' | 'high'
 
 export type PaymentBehavior =
-  'em_dia' | 'atrasos_ocasionais' | 'inadimplente_recorrente'
+  'on_time' | 'occasional_delays' | 'frequent_delays'
 
 export type CustomerSummary = {
   customerId: string

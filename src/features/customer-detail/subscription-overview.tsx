@@ -8,7 +8,7 @@ import { formatDate } from '../../lib/format-date'
 import { formatPlanPrice } from '../../lib/format-plan-price'
 import { nextRetryDate } from '../../lib/retry-schedule'
 import { customerChargesQuery } from './charges-queries'
-import { customerSummaryQuery } from './customer-detail-queries'
+import { customerPaidTotalQuery } from './customer-detail-queries'
 import { StatCard } from './stat-card'
 
 type SubscriptionOverviewProps = {
@@ -33,7 +33,7 @@ export function SubscriptionOverview({
   subscription,
   plan,
 }: SubscriptionOverviewProps) {
-  const summary = useQuery(customerSummaryQuery(customerId))
+  const paidTotal = useQuery(customerPaidTotalQuery(customerId))
   const nextRetry = useNextRetry(customerId, subscription.id)
 
   return (
@@ -55,9 +55,9 @@ export function SubscriptionOverview({
           )}
         </StatCard>
         <StatCard label="Lifetime paid">
-          {summary.data ? (
-            formatCurrency(summary.data.metrics.totalPaidCents)
-          ) : summary.isError ? (
+          {paidTotal.data !== undefined ? (
+            formatCurrency(paidTotal.data)
+          ) : paidTotal.isError ? (
             <span className="text-fg-subtle font-normal">Unavailable</span>
           ) : (
             <Skeleton className="h-5 w-24" />

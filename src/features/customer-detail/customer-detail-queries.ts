@@ -34,9 +34,26 @@ export function primarySubscription(subscriptions: SubscriptionRef[]) {
   )[0]
 }
 
+const MAX_CHARGES_PAGE = 100
+
 export function customerSummaryQuery(customerId: string) {
   return queryOptions({
     queryKey: queryKeys.customers.summary(customerId),
     queryFn: () => customersApi.summary(customerId),
+    enabled: false,
+    retry: false,
+    staleTime: Infinity,
+  })
+}
+
+export function customerPaidTotalQuery(customerId: string) {
+  const params = { limit: MAX_CHARGES_PAGE }
+  return queryOptions({
+    queryKey: queryKeys.customers.charges(customerId, params),
+    queryFn: () => customersApi.charges(customerId, params),
+    select: (history) =>
+      history.data
+        .filter((charge) => charge.status === 'paid')
+        .reduce((total, charge) => total + charge.amountCents, 0),
   })
 }

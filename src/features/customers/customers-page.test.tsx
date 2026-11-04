@@ -13,7 +13,7 @@ describe('customers page', () => {
   it('shows a skeleton and then the first page of customers', async () => {
     server.use(
       http.get(`${apiBaseUrl}/customers`, async () => {
-        await delay(400)
+        await delay(1500)
       }),
     )
     renderApp('/customers')

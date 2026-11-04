@@ -10,8 +10,8 @@ import { conflict } from './demo-api-error'
 
 const GENERIC_SUMMARY = {
   summary: 'New account with no payment history yet.',
-  paymentBehavior: 'em_dia',
-  riskLevel: 'baixo',
+  paymentBehavior: 'on_time',
+  riskLevel: 'low',
   suggestedAction: 'No action needed until the first renewal.',
 } as const
 
