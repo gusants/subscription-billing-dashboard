@@ -20,6 +20,7 @@ function liveApiProxy(mode: string) {
 }
 
 export default defineConfig(({ mode }) => ({
+  base: process.env.BASE_PATH ?? '/',
   server: { proxy: liveApiProxy(mode) },
   preview: { proxy: liveApiProxy(mode) },
   plugins: [

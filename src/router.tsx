@@ -11,6 +11,7 @@ export function createAppRouter(
   return createRouter({
     routeTree,
     history,
+    basepath: import.meta.env.BASE_URL,
     context: { queryClient },
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,

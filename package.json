@@ -17,8 +17,7 @@
     "generate:api-types": "pnpm dlx --package typescript@5.9.3 --package openapi-typescript@7.13.0 openapi-typescript ${OPENAPI_SOURCE:-${VITE_API_URL:-http://localhost:3000}/docs-json} -o src/api/generated/schema.d.ts",
     "generate:seed": "node scripts/generate-seed.ts",
     "e2e": "playwright test",
-    "record-demo": "node scripts/record-demo.ts",
-    "deploy": "pnpm build && wrangler deploy"
+    "record-demo": "node scripts/record-demo.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -60,8 +59,7 @@
     "tailwindcss": "^4.3.4",
     "typescript": "~7.0.2",
     "vite": "^8.3.5",
-    "vitest": "^5.1.0",
-    "wrangler": "4.159.0"
+    "vitest": "^5.1.0"
   },
   "packageManager": "pnpm@10.34.5",
   "engines": {
