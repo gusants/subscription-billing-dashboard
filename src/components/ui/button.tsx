@@ -25,7 +25,7 @@ export function Button({
   return (
     <AriaButton
       {...props}
-      className={`inline-flex h-9 cursor-default items-center justify-center gap-2 rounded-md px-3.5 font-medium transition-colors data-disabled:opacity-50 data-pending:opacity-70 ${variantClasses[variant]} ${className}`}
+      className={`inline-flex h-9 shrink-0 cursor-default items-center justify-center gap-2 rounded-md px-3.5 font-medium whitespace-nowrap transition-colors data-disabled:opacity-50 data-pending:opacity-70 ${variantClasses[variant]} ${className}`}
     />
   )
 }
