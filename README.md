@@ -49,12 +49,13 @@ The dev server proxies `/api` to `VITE_API_URL` (default `http://localhost:3000`
 
 ### Scripts
 
-| Command                   | What it does                                                                |
-| ------------------------- | --------------------------------------------------------------------------- |
-| `pnpm test`               | Unit and component tests (Vitest, Testing Library, MSW)                     |
-| `pnpm e2e`                | Playwright: the main flow and axe accessibility checks, desktop and mobile  |
-| `pnpm generate:api-types` | Regenerates `src/api/generated/schema.d.ts` from the API's OpenAPI document |
-| `pnpm record-demo`        | Re-records the GIF and screenshots above                                    |
+| Command                   | What it does                                                                            |
+| ------------------------- | --------------------------------------------------------------------------------------- |
+| `pnpm test`               | Unit and component tests (Vitest, Testing Library, MSW)                                 |
+| `pnpm e2e`                | Playwright: the main flow and axe accessibility checks, desktop and mobile              |
+| `pnpm generate:api-types` | Regenerates `src/api/generated/schema.d.ts` from the API's OpenAPI document             |
+| `pnpm record-demo`        | Re-records the GIF and screenshots above                                                |
+| `pnpm run deploy`         | Builds the demo and publishes it to Cloudflare Workers static assets (`wrangler.jsonc`) |
 
 ## Technical decisions
 
