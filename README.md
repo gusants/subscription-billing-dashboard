@@ -14,11 +14,25 @@ A React 19 dashboard for billing operations at **Cadência**, a fictional Brazil
 - **Plans:** list and create plans.
 - **Simulator:** approve a Pix, expire a boleto, force a card decline, run the retry clock, or simulate API and LLM failures, and watch every screen update.
 
-| Overview                               | Customer detail                                    |
-| -------------------------------------- | -------------------------------------------------- |
-| ![Overview](docs/media/overview.png)   | ![Customer detail](docs/media/customer-detail.png) |
-| **Customers**                          | **Plans**                                          |
-| ![Customers](docs/media/customers.png) | ![Plans](docs/media/plans.png)                     |
+## Screens
+
+**Customer detail.** A past-due customer: the declined attempts with their reasons, the next scheduled retry, "Retry charge" as the primary action, and the AI summary with its risk level, the figures computed from the charges, and a suggested next step.
+
+![Customer detail with declined card attempts, the retry schedule and the AI summary](docs/media/customer-detail.png)
+
+**Overview.** MRR, active and past-due subscriptions and the delinquency rate against the same days of the previous period, revenue by month and subscriptions by status.
+
+![Overview with KPI cards, revenue by month and subscriptions by status](docs/media/overview.png)
+
+**Simulator.** Docked beside the page, it approves a Pix, expires a boleto, forces a card decline, runs the retry clock, resets the demo, and can break the API or the LLM to show the error states.
+
+![Customer page with the simulator panel open](docs/media/simulator.png)
+
+| Customers                                                                             | Plans                                                                |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| ![Customers list with search, status filter and pagination](docs/media/customers.png) | ![Plans list and the new plan form](docs/media/plans.png)            |
+| **Dark theme**                                                                        | **Mobile**                                                           |
+| ![Overview in the dark theme](docs/media/overview-dark.png)                           | ![Customer detail on a phone](docs/media/customer-detail-mobile.png) |
 
 ## Running it
 

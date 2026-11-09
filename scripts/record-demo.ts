@@ -10,15 +10,32 @@ type Seed = {
 const PORT = 4174
 const BASE_URL = `http://localhost:${PORT}`
 const VIEWPORT = { width: 1280, height: 800 }
+const MOBILE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }
 const MEDIA_DIR = new URL('../docs/media/', import.meta.url).pathname
 const VIDEO_DIR = `${MEDIA_DIR}.video/`
 const GIF_WIDTH = 880
 const GIF_FPS = 10
 
-function customerWithPendingPix() {
-  const seed = JSON.parse(
+function readSeed() {
+  return JSON.parse(
     readFileSync(new URL('../src/mocks/seed.json', import.meta.url), 'utf8'),
   ) as Seed
+}
+
+function customerWithFailedCard() {
+  const seed = readSeed()
+  const charge = seed.charges.find(
+    (candidate) => candidate.method === 'card' && candidate.status === 'failed',
+  )
+  const subscription = seed.subscriptions.find(
+    (candidate) => candidate.id === charge?.subscriptionId,
+  )
+  if (!subscription) throw new Error('The seed has no failed card charge')
+  return subscription.customerId
+}
+
+function customerWithPendingPix() {
+  const seed = readSeed()
   const incomplete = new Map(
     seed.subscriptions
       .filter((subscription) => subscription.status === 'incomplete')
@@ -51,18 +68,31 @@ async function settle(page: Page) {
   await page.waitForTimeout(600)
 }
 
-async function captureScreens(page: Page, customerId: string) {
-  const screens = [
-    { file: 'overview.png', path: '/' },
-    { file: 'customers.png', path: '/customers' },
-    { file: 'customer-detail.png', path: `/customers/${customerId}` },
-    { file: 'plans.png', path: '/plans' },
-  ]
-  for (const { file, path } of screens) {
-    await page.goto(`${BASE_URL}${path}`)
-    await settle(page)
-    await page.screenshot({ path: `${MEDIA_DIR}${file}` })
-  }
+async function capture(page: Page, path: string, file: string) {
+  await page.goto(`${BASE_URL}${path}`)
+  await settle(page)
+  await page.screenshot({ path: `${MEDIA_DIR}${file}` })
+}
+
+async function captureScreens(page: Page, pastDueId: string) {
+  await capture(page, '/', 'overview.png')
+  await capture(page, '/customers', 'customers.png')
+  await capture(page, '/plans', 'plans.png')
+
+  await page.goto(`${BASE_URL}/customers/${pastDueId}`)
+  await settle(page)
+  await page.getByRole('button', { name: 'Generate summary' }).click()
+  await page.getByText('Suggested action').first().waitFor()
+  await settle(page)
+  await page.screenshot({ path: `${MEDIA_DIR}customer-detail.png` })
+}
+
+async function captureSimulator(page: Page, pixCustomerId: string) {
+  await page.goto(`${BASE_URL}/customers/${pixCustomerId}`)
+  await settle(page)
+  await page.getByRole('button', { name: 'Simulator' }).last().click()
+  await settle(page)
+  await page.screenshot({ path: `${MEDIA_DIR}simulator.png` })
 }
 
 async function recordSimulator(page: Page, customerId: string) {
@@ -113,10 +143,30 @@ async function main() {
   try {
     await waitForServer()
     const customerId = customerWithPendingPix()
+    const pastDueId = customerWithFailedCard()
 
     const screensContext = await browser.newContext({ viewport: VIEWPORT })
-    await captureScreens(await screensContext.newPage(), customerId)
+    await captureScreens(await screensContext.newPage(), pastDueId)
     await screensContext.close()
+
+    const simulatorContext = await browser.newContext({ viewport: VIEWPORT })
+    await captureSimulator(await simulatorContext.newPage(), customerId)
+    await simulatorContext.close()
+
+    const darkContext = await browser.newContext({
+      viewport: VIEWPORT,
+      colorScheme: 'dark',
+    })
+    await capture(await darkContext.newPage(), '/', 'overview-dark.png')
+    await darkContext.close()
+
+    const mobileContext = await browser.newContext(MOBILE)
+    await capture(
+      await mobileContext.newPage(),
+      `/customers/${pastDueId}`,
+      'customer-detail-mobile.png',
+    )
+    await mobileContext.close()
 
     const videoContext = await browser.newContext({
       viewport: VIEWPORT,
