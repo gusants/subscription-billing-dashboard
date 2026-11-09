@@ -28,10 +28,14 @@ export function kpiDeltas(
   if (!previous) return undefined
   return {
     mrr: delta(
-      current.mrrCents,
-      previous.mrrCents,
+      current.monthlyRecurringRevenueCents,
+      previous.monthlyRecurringRevenueCents,
       'higher-is-better',
-      formatSigned(current.mrrCents - previous.mrrCents, formatCurrency),
+      formatSigned(
+        current.monthlyRecurringRevenueCents -
+          previous.monthlyRecurringRevenueCents,
+        formatCurrency,
+      ),
     ),
     active: delta(
       current.activeSubscriptions,
@@ -51,13 +55,19 @@ export function kpiDeltas(
         formatInteger,
       ),
     ),
-    delinquency: delta(
+    delinquency: delinquencyDelta(
       current.delinquencyRate,
       previous.delinquencyRate,
-      'lower-is-better',
-      formatPercentagePoints(
-        current.delinquencyRate - previous.delinquencyRate,
-      ),
     ),
   }
+}
+
+function delinquencyDelta(current: number | null, previous: number | null) {
+  if (current === null || previous === null) return undefined
+  return delta(
+    current,
+    previous,
+    'lower-is-better',
+    formatPercentagePoints(current - previous),
+  )
 }

@@ -15,12 +15,37 @@ describe('demo metrics', () => {
       count('past_due') / (count('active') + count('past_due')),
       4,
     )
-    expect(overview.mrrCents).toBeGreaterThan(0)
+    expect(overview.monthlyRecurringRevenueCents).toBeGreaterThan(0)
+    expect(overview.from).toBe('2026-11-01T00:00:00.000Z')
+    expect(overview.to).toBe('2026-11-03T23:59:59.999Z')
     expect(overview.revenueByMonth).toHaveLength(12)
     expect(overview.revenueByMonth.at(-1)?.month).toBe('2026-11')
-    expect(
-      overview.subscriptionsByStatus.reduce((total, s) => total + s.count, 0),
-    ).toBe(db.subscriptions.length)
+    expect(overview.subscriptionsByStatus).toEqual({
+      active: count('active'),
+      past_due: count('past_due'),
+      incomplete: count('incomplete'),
+      canceled: count('canceled'),
+    })
+  })
+
+  it('reports no delinquency rate when there is nothing to measure', () => {
+    const db = testDatabase()
+    db.subscriptions = []
+    db.charges = []
+
+    expect(metricsOverview(db, {}).delinquencyRate).toBeNull()
+  })
+
+  it('counts cancellations for payment failure inside the period as delinquent', () => {
+    const db = testDatabase()
+    const churned = db.subscriptions.find(
+      (s) => s.cancelReason === 'payment_failed',
+    )!
+    const day = churned.canceledAt!.slice(0, 10)
+    const overview = metricsOverview(db, { from: day, to: day })
+
+    expect(overview.delinquencyRate).toBeGreaterThan(0)
+    expect(overview.subscriptionsByStatus.canceled).toBeGreaterThan(0)
   })
 
   it('counts annual plans as one twelfth of their price in MRR', () => {
@@ -34,14 +59,14 @@ describe('demo metrics', () => {
       cardToken: 'tok_success',
     })
 
-    expect(metricsOverview(db, {}).mrrCents).toBe(
+    expect(metricsOverview(db, {}).monthlyRecurringRevenueCents).toBe(
       Math.round(annual.amountCents / 12),
     )
   })
 
   it('raises the delinquency rate when a renewal is declined', () => {
     const db = testDatabase()
-    const before = metricsOverview(db, {}).delinquencyRate
+    const before = metricsOverview(db, {}).delinquencyRate!
 
     createSubscription(db, {
       customerId: firstCustomer(db).id,
@@ -66,7 +91,10 @@ describe('demo metrics over time', () => {
       to: '2026-05-31',
     })
     const total = (overview: typeof lastMonth) =>
-      overview.subscriptionsByStatus.reduce((sum, s) => sum + s.count, 0)
+      Object.values(overview.subscriptionsByStatus).reduce(
+        (sum, count) => sum + count,
+        0,
+      )
 
     expect(total(sixMonthsAgo)).toBeLessThan(total(lastMonth))
     expect(lastMonth.activeSubscriptions).toBeGreaterThan(0)

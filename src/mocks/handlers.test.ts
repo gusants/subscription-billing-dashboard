@@ -140,7 +140,7 @@ describe('demo handlers', () => {
     const overview = await metricsApi.overview({ to: '2026-11-03' })
 
     expect(overview.revenueByMonth).toHaveLength(12)
-    expect(overview.period.to).toBe('2026-11-03')
+    expect(overview.to).toBe('2026-11-03T23:59:59.999Z')
   })
 
   it('pays and expires instant charges through the fake gateway', async () => {

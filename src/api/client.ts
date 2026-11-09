@@ -2,9 +2,8 @@ import createClient from 'openapi-fetch'
 import { apiBaseUrl } from '../lib/env'
 import type { ApiErrorBody } from './contract'
 import type { paths } from './generated/schema'
-import type { PendingPaths } from './pending-paths'
 
-export type ApiPaths = paths & PendingPaths
+export type ApiPaths = paths
 
 export const NETWORK_ERROR_STATUS = 0
 

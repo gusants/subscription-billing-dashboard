@@ -73,7 +73,7 @@ The dev server proxies `/api` to `VITE_API_URL` (default `http://localhost:3000`
 
 ## Technical decisions
 
-- **One contract, two backends.** Types are generated from the payments API's OpenAPI document with `openapi-typescript`. The client (`openapi-fetch`) and the demo handlers (`openapi-msw`) are typed against the same paths, so a mock that drifts from the API does not compile. CI regenerates the types from the API's `main` branch and fails on drift. Endpoints the API has not shipped yet live in a small hand-written `PendingPaths` type until they are published.
+- **One contract, two backends.** Types are generated from the payments API's OpenAPI document with `openapi-typescript`. The client (`openapi-fetch`) and the demo handlers (`openapi-msw`) are typed against the same paths, so a mock that drifts from the API does not compile. CI regenerates the types from the API's `main` branch and fails on drift.
 - **MSW for the demo, not a fake client.** The demo goes through real `fetch` calls, status codes, validation errors and `Idempotency-Key` handling, so switching to the live API changes one environment variable and nothing in the UI code.
 - **Server state in TanStack Query, URL state in TanStack Router.** Filters, pages and periods live in validated search params, so every view is shareable. The simulator invalidates exactly the queries an action touches.
 - **TanStack Form for the forms, `useActionState` for the simulator.** Create customer, plan and subscription need field-level validation, server errors mapped back onto fields, and dirty and touched state, which TanStack Form handles well. Simulator actions are one-shot buttons with a pending state and a result message, the exact shape `useActionState` and `useFormStatus` were made for.

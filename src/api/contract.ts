@@ -23,6 +23,7 @@ export type PlanListParams = NonNullable<
 
 export type Subscription = Schemas['SubscriptionResponseDto_Output']
 export type SubscriptionStatus = Subscription['status']
+export type CancelReason = NonNullable<Subscription['cancelReason']>
 export type PaymentMethod = Subscription['paymentMethod']
 export type CreatedSubscription =
   Schemas['CreatedSubscriptionResponseDto_Output']
@@ -44,53 +45,15 @@ export type CardToken =
   | 'tok_expired_card'
   | 'tok_fail_then_success'
 
-export type RevenuePoint = {
-  month: string
-  revenueCents: number
-}
+export type MetricsOverview = Schemas['MetricsOverviewResponseDto_Output']
+export type MetricsOverviewParams = NonNullable<
+  paths['/metrics/overview']['get']['parameters']['query']
+>
+export type RevenuePoint = MetricsOverview['revenueByMonth'][number]
+export type SubscriptionsByStatus = MetricsOverview['subscriptionsByStatus']
 
-export type SubscriptionsByStatus = {
-  status: SubscriptionStatus
-  count: number
-}
+export type CustomerSummary = Schemas['CustomerSummaryResponseDto_Output']
+export type RiskLevel = CustomerSummary['riskLevel']
+export type PaymentBehavior = CustomerSummary['paymentBehavior']
 
-export type MetricsOverview = {
-  period: { from: string; to: string }
-  mrrCents: number
-  activeSubscriptions: number
-  pastDueSubscriptions: number
-  delinquencyRate: number
-  revenueByMonth: RevenuePoint[]
-  subscriptionsByStatus: SubscriptionsByStatus[]
-}
-
-export type MetricsOverviewParams = {
-  from?: string
-  to?: string
-}
-
-export type RiskLevel = 'low' | 'medium' | 'high'
-
-export type PaymentBehavior =
-  'on_time' | 'occasional_delays' | 'frequent_delays'
-
-export type CustomerSummary = {
-  customerId: string
-  source: 'llm' | 'fallback'
-  promptVersion: string
-  metrics: {
-    monthsAsCustomer: number
-    totalPaidCents: number
-    failedAttempts: number
-    averageDaysLate: number
-    paymentSuccessRate: number
-  }
-  summary: string
-  paymentBehavior: PaymentBehavior
-  riskLevel: RiskLevel
-  suggestedAction: string
-}
-
-export type RetriesRunResult = {
-  promoted: number
-}
+export type RetriesRunResult = Schemas['DevRetriesRunNowResponseDto_Output']

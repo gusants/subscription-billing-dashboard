@@ -303,6 +303,7 @@ function buildSubscription(
     currentPeriodStart: iso(anchor),
     currentPeriodEnd: iso(anchor),
     canceledAt: null,
+    cancelReason: null,
     cardToken: profile.cardToken,
     createdAt: iso(anchor),
     updatedAt: iso(anchor),
@@ -343,6 +344,12 @@ function buildSubscription(
     ...subscription,
     status,
     canceledAt,
+    cancelReason:
+      status === 'canceled'
+        ? profile.ending === 'churned'
+          ? ('payment_failed' as const)
+          : ('customer_request' as const)
+        : null,
     currentPeriodStart: iso(lastPeriod.start),
     currentPeriodEnd: iso(lastPeriod.end),
     updatedAt: canceledAt ?? lastCharge.paidAt ?? lastCharge.createdAt,

@@ -1,4 +1,5 @@
 import type {
+  CancelReason,
   CardToken,
   CreateSubscriptionInput,
   PaymentMethod,
@@ -64,8 +65,13 @@ function issueCharge(
   return charge
 }
 
-function cancel(subscription: DemoSubscription, at: Date) {
+function cancel(
+  subscription: DemoSubscription,
+  at: Date,
+  reason: CancelReason,
+) {
   subscription.status = 'canceled'
+  subscription.cancelReason = reason
   subscription.canceledAt = at.toISOString()
   subscription.updatedAt = at.toISOString()
 }
@@ -105,7 +111,7 @@ function attemptCardCharge(db: DemoDatabase, charge: DemoCharge, at: Date) {
   if (retryInDays === undefined) {
     charge.status = 'uncollectible'
     charge.nextRetryAt = null
-    cancel(subscription, at)
+    cancel(subscription, at, 'payment_failed')
     return
   }
   charge.status = 'failed'
@@ -142,6 +148,7 @@ export function createSubscription(
     currentPeriodStart: at.toISOString(),
     currentPeriodEnd: periodEnd(at, plan).toISOString(),
     canceledAt: null,
+    cancelReason: null,
     cardToken:
       input.paymentMethod === 'card' ? toCardToken(input.cardToken) : null,
     createdAt: at.toISOString(),
@@ -159,7 +166,7 @@ export function cancelSubscription(db: DemoDatabase, id: string) {
   if (subscription.status === 'canceled')
     throw conflict(`Subscription ${id} is already canceled`)
   const at = tick(db)
-  cancel(subscription, at)
+  cancel(subscription, at, 'customer_request')
   for (const charge of db.charges) {
     if (charge.subscriptionId === id) charge.nextRetryAt = null
   }
@@ -196,7 +203,13 @@ export function expireInstantCharge(db: DemoDatabase, id: string) {
   charge.status = 'expired'
   const retryInDays = RETRY_SCHEDULE_DAYS[expiredReissues(db, charge) - 1]
   if (retryInDays === undefined) {
-    cancel(subscription, at)
+    cancel(
+      subscription,
+      at,
+      subscription.status === 'incomplete'
+        ? 'initial_payment_expired'
+        : 'payment_failed',
+    )
     return charge
   }
   charge.nextRetryAt = addDays(at, retryInDays).toISOString()

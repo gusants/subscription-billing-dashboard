@@ -10,12 +10,6 @@ import { findPlan } from './lookups'
 
 const MONTHS_IN_CHART = 12
 const MONTHS_PER_YEAR = 12
-const SUBSCRIPTION_STATUSES: SubscriptionStatus[] = [
-  'active',
-  'past_due',
-  'incomplete',
-  'canceled',
-]
 
 function monthlyAmountCents(plan: Plan) {
   return plan.interval === 'yearly'
@@ -54,6 +48,7 @@ function revenueByMonth(db: DemoDatabase, lastMonth: Date) {
   }))
 }
 
+const START_OF_DAY = 'T00:00:00.000Z'
 const END_OF_DAY = 'T23:59:59.999Z'
 
 function isPaidBy(charge: DemoCharge, at: string) {
@@ -98,36 +93,53 @@ export function metricsOverview(
   params: MetricsOverviewParams,
 ): MetricsOverview {
   const now = new Date(db.now)
-  const from = params.from ?? startOfMonth(now).toISOString().slice(0, 10)
-  const to = params.to ?? now.toISOString().slice(0, 10)
+  const fromDate = params.from ?? startOfMonth(now).toISOString().slice(0, 10)
+  const toDate = params.to ?? now.toISOString().slice(0, 10)
+  const from = `${fromDate}${START_OF_DAY}`
+  const to = `${toDate}${END_OF_DAY}`
   const statuses = db.subscriptions.flatMap((subscription) => {
-    const status = statusAt(db, subscription, `${to}${END_OF_DAY}`)
+    const status = statusAt(db, subscription, to)
     return status ? [{ subscription, status }] : []
   })
   const count = (status: SubscriptionStatus) =>
     statuses.filter((entry) => entry.status === status).length
-  const billable = statuses.filter(
-    (entry) => entry.status === 'active' || entry.status === 'past_due',
-  )
+  const activeSubscriptions = count('active')
   const pastDueSubscriptions = count('past_due')
+  const canceledForPaymentFailure = statuses.filter(
+    ({ subscription, status }) =>
+      status === 'canceled' &&
+      subscription.cancelReason === 'payment_failed' &&
+      subscription.canceledAt !== null &&
+      subscription.canceledAt >= from,
+  ).length
+  const denominator =
+    activeSubscriptions + pastDueSubscriptions + canceledForPaymentFailure
 
   return {
-    period: { from, to },
-    mrrCents: billable.reduce(
-      (total, { subscription }) =>
-        total + monthlyAmountCents(findPlan(db, subscription.planId)),
-      0,
-    ),
-    activeSubscriptions: count('active'),
+    from,
+    to,
+    monthlyRecurringRevenueCents: statuses
+      .filter((entry) => entry.status === 'active')
+      .reduce(
+        (total, { subscription }) =>
+          total + monthlyAmountCents(findPlan(db, subscription.planId)),
+        0,
+      ),
+    activeSubscriptions,
     pastDueSubscriptions,
     delinquencyRate:
-      billable.length === 0
-        ? 0
-        : roundTo(pastDueSubscriptions / billable.length, 4),
+      denominator === 0
+        ? null
+        : roundTo(
+            (pastDueSubscriptions + canceledForPaymentFailure) / denominator,
+            4,
+          ),
     revenueByMonth: revenueByMonth(db, new Date(to)),
-    subscriptionsByStatus: SUBSCRIPTION_STATUSES.map((status) => ({
-      status,
-      count: count(status),
-    })),
+    subscriptionsByStatus: {
+      active: activeSubscriptions,
+      past_due: pastDueSubscriptions,
+      incomplete: count('incomplete'),
+      canceled: count('canceled'),
+    },
   }
 }

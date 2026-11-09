@@ -18,6 +18,7 @@ const RESOLVED_CHARGE_STATUSES = new Set([
 ])
 const LATE_DAYS_THRESHOLD = 2
 const FREQUENT_DELAY_SUCCESS_RATE = 0.8
+const UNRELIABLE_SUCCESS_RATE = 0.5
 const HIGH_RISK_FAILED_ATTEMPTS = 3
 const seedDatabase = seed as DemoDatabase
 
@@ -80,16 +81,18 @@ function computeMetrics(db: DemoDatabase, customerId: string): SummaryMetrics {
       .filter((a) => a.result === 'declined').length,
     averageDaysLate:
       daysLate.length === 0
-        ? 0
+        ? null
         : roundTo(daysLate.reduce((a, b) => a + b, 0) / daysLate.length, 1),
     paymentSuccessRate:
-      resolved.length === 0 ? 0 : roundTo(paid.length / resolved.length, 2),
+      resolved.length === 0 ? null : roundTo(paid.length / resolved.length, 2),
   }
 }
 
 function paymentBehavior(metrics: SummaryMetrics): PaymentBehavior {
-  if (metrics.failedAttempts === 0 && metrics.averageDaysLate < 1)
+  if (metrics.paymentSuccessRate === null) return 'insufficient_history'
+  if (metrics.failedAttempts === 0 && (metrics.averageDaysLate ?? 0) < 1)
     return 'on_time'
+  if (metrics.paymentSuccessRate < UNRELIABLE_SUCCESS_RATE) return 'unreliable'
   if (metrics.paymentSuccessRate < FREQUENT_DELAY_SUCCESS_RATE)
     return 'frequent_delays'
   return 'occasional_delays'
@@ -108,7 +111,7 @@ function riskLevel(
     return 'high'
   if (
     statuses.includes('past_due') ||
-    metrics.averageDaysLate > LATE_DAYS_THRESHOLD
+    (metrics.averageDaysLate ?? 0) > LATE_DAYS_THRESHOLD
   )
     return 'medium'
   return 'low'
@@ -165,6 +168,7 @@ export function customerSummary(
 
   return {
     customerId,
+    generatedAt: db.now,
     source: usePreWritten ? 'llm' : 'fallback',
     promptVersion: PROMPT_VERSION,
     metrics,

@@ -19,10 +19,10 @@ export function KpiGrid({ current, previous, comparison }: KpiGridProps) {
       <dl className="grid grid-cols-1 gap-3 @xl:grid-cols-2 @4xl:grid-cols-4">
         <KpiCard
           label="Monthly recurring revenue"
-          value={formatCurrency(current.mrrCents)}
+          value={formatCurrency(current.monthlyRecurringRevenueCents)}
           delta={deltas?.mrr}
           comparison={comparison}
-          footnote="Active and past due, annual plans ÷ 12"
+          footnote="Active subscriptions, annual plans ÷ 12"
         />
         <KpiCard
           label="Active subscriptions"
@@ -47,10 +47,18 @@ export function KpiGrid({ current, previous, comparison }: KpiGridProps) {
         />
         <KpiCard
           label="Delinquency rate"
-          value={formatPercent(current.delinquencyRate)}
+          value={
+            current.delinquencyRate === null
+              ? '—'
+              : formatPercent(current.delinquencyRate)
+          }
           delta={deltas?.delinquency}
           comparison={comparison}
-          footnote="Past due ÷ (active + past due)"
+          footnote={
+            current.delinquencyRate === null
+              ? 'Not enough history: no subscriptions to measure yet'
+              : 'Past due and canceled for payment failure ÷ those plus active'
+          }
         />
       </dl>
     </section>

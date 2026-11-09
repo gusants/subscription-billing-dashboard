@@ -68,6 +68,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/customers/{id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CustomerSummaryController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dev/retries/run-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DevRetriesController_runNow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fake-gateway/charges/{id}/expire": {
         parameters: {
             query?: never;
@@ -140,6 +172,26 @@ export interface paths {
             cookie?: never;
         };
         get: operations["HealthController_check"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/metrics/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Revenue and subscription health overview
+         * @description Current state, not filtered by from/to: monthlyRecurringRevenueCents, activeSubscriptions, pastDueSubscriptions and subscriptionsByStatus. Bounded by from/to: revenueByMonth and the payment-failure cancellations inside delinquencyRate. Without from/to the period is the current UTC calendar month. The figures are read in one RepeatableRead transaction.
+         */
+        get: operations["MetricsController_overview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -269,6 +321,42 @@ export interface components {
                 totalPages: number;
             };
         };
+        ChargeRetryResponseDto: {
+            charge: {
+                amountCents: number;
+                attemptCount: number;
+                /** @description Gateway attempts, oldest first */
+                attempts: {
+                    /** Format: date-time */
+                    createdAt: string;
+                    failureReason: string | null;
+                    id: string;
+                    /** @enum {string} */
+                    result: "succeeded" | "declined";
+                }[];
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                dueDate: string;
+                id: string;
+                /** @enum {string} */
+                method: "card" | "pix" | "boleto";
+                /** Format: date-time */
+                paidAt: string | null;
+                /** Format: date-time */
+                periodEnd: string;
+                /** Format: date-time */
+                periodStart: string;
+                /** @enum {string} */
+                status: "pending" | "paid" | "failed" | "expired" | "uncollectible";
+                subscriptionId: string;
+            };
+            subscription: {
+                id: string;
+                /** @enum {string} */
+                status: "incomplete" | "active" | "past_due" | "canceled";
+            };
+        };
         ChargeRetryResponseDto_Output: {
             charge: {
                 amountCents: number;
@@ -314,6 +402,8 @@ export interface components {
             billingAnchor: string;
             /** Format: date-time */
             canceledAt: string | null;
+            /** @enum {string|null} */
+            cancelReason: "payment_failed" | "customer_request" | "initial_payment_expired" | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -417,6 +507,30 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        CustomerSummaryResponseDto_Output: {
+            customerId: string;
+            /** Format: date-time */
+            generatedAt: string;
+            metrics: {
+                averageDaysLate: number | null;
+                failedAttempts: number;
+                monthsAsCustomer: number;
+                paymentSuccessRate: number | null;
+                totalPaidCents: number;
+            };
+            /** @enum {string} */
+            paymentBehavior: "on_time" | "occasional_delays" | "frequent_delays" | "unreliable" | "insufficient_history";
+            promptVersion: string;
+            /** @enum {string} */
+            riskLevel: "low" | "medium" | "high";
+            /** @enum {string} */
+            source: "llm" | "fallback";
+            suggestedAction: string;
+            summary: string;
+        };
+        DevRetriesRunNowResponseDto_Output: {
+            promoted: number;
+        };
         ErrorResponseDto: {
             details?: unknown[];
             error: string;
@@ -488,6 +602,38 @@ export interface components {
             /** @enum {string} */
             type: "charge.paid" | "charge.failed" | "charge.expired";
         };
+        MetricsOverviewResponseDto_Output: {
+            /** @description Current state, not filtered by the period */
+            activeSubscriptions: number;
+            /** @description (pastDue + canceledForPaymentFailure) / (active + pastDue + canceledForPaymentFailure). Mixes current counts with cancellations for payment failure whose canceled_at falls inside the period. Null when the denominator is 0 */
+            delinquencyRate: number | null;
+            /**
+             * Format: date-time
+             * @description Start of the requested period; bounds only the two period-scoped fields
+             */
+            from: string;
+            /** @description Current state, not filtered by the period: active subscriptions priced at each plan current amount, yearly plans divided by 12 */
+            monthlyRecurringRevenueCents: number;
+            /** @description Current state, not filtered by the period */
+            pastDueSubscriptions: number;
+            /** @description Period-scoped: paid charges grouped by UTC month of paid_at inside the period. Charges paid after their subscription was canceled are excluded because the money is refund-due */
+            revenueByMonth: {
+                month: string;
+                revenueCents: number;
+            }[];
+            /** @description Current state, not filtered by the period */
+            subscriptionsByStatus: {
+                active: number;
+                canceled: number;
+                incomplete: number;
+                past_due: number;
+            };
+            /**
+             * Format: date-time
+             * @description End of the requested period; bounds only the two period-scoped fields
+             */
+            to: string;
+        };
         PlanListResponseDto_Output: {
             data: {
                 active: boolean;
@@ -528,6 +674,8 @@ export interface components {
             billingAnchor: string;
             /** Format: date-time */
             canceledAt: string | null;
+            /** @enum {string|null} */
+            cancelReason: "payment_failed" | "customer_request" | "initial_payment_expired" | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -571,13 +719,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The attempt ran. A failed charge is retried as a new attempt; a pending charge past its attempt lease is reconciled with the gateway. charge.status is paid or failed once the gateway decided, and stays pending when the gateway is unavailable, its outcome is unknown or it has not decided yet; retry again later */
+            /** @description A pending charge past its attempt lease was reconciled with the gateway inline. charge.status is paid or failed once the gateway decided, and stays pending when the gateway is unavailable, its outcome is unknown or it has not decided yet; retry again later */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ChargeRetryResponseDto_Output"];
+                };
+            };
+            /** @description A failed charge, or an expired pix/boleto charge that is the newest of its period (a new charge is issued for the period): the next dunning retry was queued to run now (same deterministic job as the scheduled retry, so it never runs twice) and the body shows the charge as it is at this moment, still failed or expired. The worker settles it asynchronously; poll the customer charge history */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeRetryResponseDto"];
                 };
             };
             /** @description Invalid Idempotency-Key */
@@ -597,7 +754,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponseDto"];
                 };
             };
-            /** @description The charge cannot be retried: it is paid, its subscription is canceled, it was modified concurrently, or it is pending with an attempt still in flight within the lease (CHARGE_ATTEMPT_LEASE_SECONDS); or a request with the same Idempotency-Key is still being processed */
+            /** @description The charge cannot be retried: it is paid or uncollectible, it is expired but superseded by a newer charge of the same period, its subscription is canceled, it has used its dunning retries, it was modified concurrently, or it is pending with an attempt still in flight within the lease (CHARGE_ATTEMPT_LEASE_SECONDS); or a request with the same Idempotency-Key is still being processed */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -615,7 +772,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponseDto"];
                 };
             };
-            /** @description An Idempotency-Key was sent and the idempotency store is unavailable */
+            /** @description The retry queue is unavailable (nothing was queued; the same Idempotency-Key can be sent again), or an Idempotency-Key was sent and the idempotency store is unavailable */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -757,6 +914,63 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    CustomerSummaryController_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerSummaryResponseDto_Output"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    DevRetriesController_runNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Development only: promotes every delayed dunning retry job to run now and returns how many were promoted. The worker settles them asynchronously */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevRetriesRunNowResponseDto_Output"];
+                };
+            };
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1044,6 +1258,36 @@ export interface operations {
                          */
                         status?: "error" | "shutting_down";
                     };
+                };
+            };
+        };
+    };
+    MetricsController_overview: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricsOverviewResponseDto_Output"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponseDto"];
                 };
             };
         };

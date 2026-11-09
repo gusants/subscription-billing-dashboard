@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { Suspense, useState } from 'react'
+import type { MetricsOverview } from '../../api/contract'
 import { Skeleton } from '../../components/feedback/skeleton'
 import { Select } from '../../components/ui/select'
 import { KpiGrid } from './kpi-grid'
@@ -26,8 +27,10 @@ function openMonth(periodEnd: string, today: Date) {
   return periodEnd >= todayIso ? periodEnd.slice(0, 7) : undefined
 }
 
-function hasNoData(overview: { subscriptionsByStatus: { count: number }[] }) {
-  return overview.subscriptionsByStatus.every((entry) => entry.count === 0)
+function hasNoData(overview: Pick<MetricsOverview, 'subscriptionsByStatus'>) {
+  return Object.values(overview.subscriptionsByStatus).every(
+    (count) => count === 0,
+  )
 }
 
 export function OverviewPage() {
@@ -93,9 +96,7 @@ export function OverviewPage() {
         >
           {(data) => (
             <Suspense fallback={<ChartSkeleton />}>
-              <SubscriptionsByStatusChart
-                entries={data.subscriptionsByStatus}
-              />
+              <SubscriptionsByStatusChart counts={data.subscriptionsByStatus} />
             </Suspense>
           )}
         </WidgetState>

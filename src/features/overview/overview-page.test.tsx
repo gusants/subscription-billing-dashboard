@@ -29,7 +29,9 @@ describe('overview page', () => {
       `${((pastDue / (active + pastDue)) * 100).toFixed(1)}%`,
     )
     expect(
-      screen.getByText('Past due ÷ (active + past due)'),
+      screen.getByText(
+        'Past due and canceled for payment failure ÷ those plus active',
+      ),
     ).toBeInTheDocument()
   })
 

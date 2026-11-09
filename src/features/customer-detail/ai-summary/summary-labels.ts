@@ -11,6 +11,8 @@ const BEHAVIOR: Record<PaymentBehavior, string> = {
   on_time: 'Pays on time',
   occasional_delays: 'Occasional delays',
   frequent_delays: 'Frequent delays',
+  unreliable: 'Unreliable payer',
+  insufficient_history: 'Not enough history',
 }
 
 export function riskLabel(level: RiskLevel) {

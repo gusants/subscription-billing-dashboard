@@ -45,7 +45,7 @@ describe('demo mode behavior', () => {
     expect(charge.attempts.at(-1)?.failureReason).toBe('insufficient_funds')
     expect(pastDue.data.map((c) => c.id)).toContain(customerId)
     expect(after.pastDueSubscriptions).toBe(before.pastDueSubscriptions + 1)
-    expect(after.delinquencyRate).toBeGreaterThan(before.delinquencyRate)
+    expect(after.delinquencyRate).toBeGreaterThan(before.delinquencyRate!)
   })
 
   it('settles a Pix charge from the simulator and updates revenue and MRR', async () => {
@@ -66,8 +66,8 @@ describe('demo mode behavior', () => {
     expect(await subscriptionsApi.get(created.id)).toMatchObject({
       status: 'active',
     })
-    expect(after.mrrCents).toBe(
-      before.mrrCents + created.latestCharge!.amountCents,
+    expect(after.monthlyRecurringRevenueCents).toBe(
+      before.monthlyRecurringRevenueCents + created.latestCharge!.amountCents,
     )
     expect(after.revenueByMonth.at(-1)!.revenueCents).toBe(
       before.revenueByMonth.at(-1)!.revenueCents +
@@ -133,7 +133,10 @@ describe('demo mode behavior', () => {
     const overview = await metricsApi.overview()
     expect(customers.meta.total).toBe(seed.customers.length)
     expect(
-      overview.subscriptionsByStatus.reduce((total, s) => total + s.count, 0),
+      Object.values(overview.subscriptionsByStatus).reduce(
+        (total, count) => total + count,
+        0,
+      ),
     ).toBe(seed.subscriptions.length)
   })
 })

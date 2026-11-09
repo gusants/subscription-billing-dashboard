@@ -2,6 +2,8 @@ import type { CustomerSummary } from '../../../api/contract'
 import { formatCurrency } from '../../../lib/format-currency'
 import { formatInteger, formatPercent } from '../../../lib/format-number'
 
+const NO_HISTORY = 'Not enough history'
+
 export function SummaryMetrics({
   metrics,
 }: {
@@ -11,8 +13,18 @@ export function SummaryMetrics({
     ['Customer for', `${formatInteger(metrics.monthsAsCustomer)} months`],
     ['Total paid', formatCurrency(metrics.totalPaidCents)],
     ['Declined attempts', formatInteger(metrics.failedAttempts)],
-    ['Average days late', metrics.averageDaysLate.toFixed(1)],
-    ['Payment success', formatPercent(metrics.paymentSuccessRate)],
+    [
+      'Average days late',
+      metrics.averageDaysLate === null
+        ? NO_HISTORY
+        : metrics.averageDaysLate.toFixed(1),
+    ],
+    [
+      'Payment success',
+      metrics.paymentSuccessRate === null
+        ? NO_HISTORY
+        : formatPercent(metrics.paymentSuccessRate),
+    ],
   ] as const
 
   return (

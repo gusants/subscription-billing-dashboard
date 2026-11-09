@@ -9,8 +9,12 @@ import {
   YAxis,
 } from 'recharts'
 import { Link, useNavigate } from '@tanstack/react-router'
-import type { SubscriptionsByStatus } from '../../api/contract'
+import type {
+  SubscriptionStatus,
+  SubscriptionsByStatus,
+} from '../../api/contract'
 import {
+  subscriptionStatuses,
   subscriptionStatusLabel,
   type StatusTone,
 } from '../../lib/billing-labels'
@@ -25,7 +29,12 @@ const BAR_RADIUS: [number, number, number, number] = [0, 4, 4, 0]
 const AXIS_TICK = { fill: 'var(--fg-muted)', fontSize: 13 }
 const VALUE_LABEL = { fill: 'var(--fg)', fontSize: 13 }
 
-type StatusRow = SubscriptionsByStatus & { label: string; tone: StatusTone }
+type StatusRow = {
+  status: SubscriptionStatus
+  count: number
+  label: string
+  tone: StatusTone
+}
 
 const toneFill: Record<StatusTone, string> = {
   success: 'var(--chart-accent)',
@@ -34,10 +43,11 @@ const toneFill: Record<StatusTone, string> = {
   neutral: 'var(--fg-subtle)',
 }
 
-function toRows(entries: SubscriptionsByStatus[]): StatusRow[] {
-  return entries.map((entry) => ({
-    ...entry,
-    ...subscriptionStatusLabel(entry.status),
+function toRows(counts: SubscriptionsByStatus): StatusRow[] {
+  return subscriptionStatuses.map((status) => ({
+    status,
+    count: counts[status],
+    ...subscriptionStatusLabel(status),
   }))
 }
 
@@ -63,11 +73,11 @@ function StatusTable({ rows }: { rows: StatusRow[] }) {
 }
 
 export function SubscriptionsByStatusChart({
-  entries,
+  counts,
 }: {
-  entries: SubscriptionsByStatus[]
+  counts: SubscriptionsByStatus
 }) {
-  const rows = toRows(entries)
+  const rows = toRows(counts)
   const navigate = useNavigate()
   const showCustomers = (row: StatusRow) =>
     void navigate({ to: '/customers', search: { status: row.status } })
