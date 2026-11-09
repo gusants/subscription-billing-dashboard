@@ -1,6 +1,6 @@
 # Cadência Billing — Subscription Billing Dashboard
 
-**Live demo:** [cadencia-billing.gusantos1704.workers.dev](https://cadencia-billing.gusantos1704.workers.dev) · runs entirely in the browser, no sign-up, no backend.
+**Live demo:** [gusants.github.io/subscription-billing-dashboard](https://gusants.github.io/subscription-billing-dashboard/) · runs entirely in the browser, no sign-up, no backend.
 
 A React 19 dashboard for billing operations at **Cadência**, a fictional Brazilian SaaS that sells monthly plans to music schools and teachers. It answers three questions fast: how revenue is doing, who is at risk, and why a payment failed. It consumes the [Subscription Payments API](https://github.com/gusants/subscription-payments-api) (NestJS) and ships with a demo mode that runs the same contract in the browser.
 
@@ -63,13 +63,16 @@ The dev server proxies `/api` to `VITE_API_URL` (default `http://localhost:3000`
 
 ### Scripts
 
-| Command                   | What it does                                                                            |
-| ------------------------- | --------------------------------------------------------------------------------------- |
-| `pnpm test`               | Unit and component tests (Vitest, Testing Library, MSW)                                 |
-| `pnpm e2e`                | Playwright: the main flow and axe accessibility checks, desktop and mobile              |
-| `pnpm generate:api-types` | Regenerates `src/api/generated/schema.d.ts` from the API's OpenAPI document             |
-| `pnpm record-demo`        | Re-records the GIF and screenshots above                                                |
-| `pnpm run deploy`         | Builds the demo and publishes it to Cloudflare Workers static assets (`wrangler.jsonc`) |
+| Command                   | What it does                                                                |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `pnpm test`               | Unit and component tests (Vitest, Testing Library, MSW)                     |
+| `pnpm e2e`                | Playwright: the main flow and axe accessibility checks, desktop and mobile  |
+| `pnpm generate:api-types` | Regenerates `src/api/generated/schema.d.ts` from the API's OpenAPI document |
+| `pnpm record-demo`        | Re-records the GIF and screenshots above                                    |
+
+## Deploy
+
+Every push to `main` builds the demo with `VITE_API_MODE=demo` under the repository path and publishes it to GitHub Pages (`.github/workflows/pages.yml`). Pages has no rewrites, so the build also ships `index.html` as `404.html` to let deep links load the app.
 
 ## Technical decisions
 
